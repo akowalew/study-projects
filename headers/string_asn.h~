@@ -17,7 +17,7 @@ class string_asn : public asn_structure
 	std::string value ;
 
 public :
-	string_asn(bool opt) : asn_structure(opt), value() { tag = 0x1A ; }
+	string_asn(bool opt) : asn_structure(opt), value() { tag = 0x18 ; }
 
 	void set_value(std::string val) ;
 	std::string get_value() { return value ; }
