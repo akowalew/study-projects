@@ -23,7 +23,6 @@ enum throw_error_e
 };
 
 
-
 class asn_structure
 {
 

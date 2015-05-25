@@ -13,32 +13,15 @@
 
 class date_asn : public asn_sequence
 {
-	integer_asn dzien, miesiac, rok ;
+
 public :
 
-	date_asn(bool opt = false) : asn_sequence(opt), dzien(true), miesiac(true), rok(true)
-	{
-		add_item(&dzien) ;
-		add_item(&miesiac) ;
-		add_item(&rok) ;
-	}
+	integer_asn dzien, miesiac, rok ;
 
-	void set_value(long ldzien, long lmiesiac, long lrok)
-	{
-		dzien.set_value(ldzien) ;
-		miesiac.set_value(lmiesiac) ;
-		rok.set_value(lrok) ;
-	}
-
-	void get_value(long &ldzien, long &lmiesiac, long &lrok)
-	{
-		ldzien = dzien.get_value() ;
-		lmiesiac = miesiac.get_value() ;
-		lrok = rok.get_value() ;
-  	}
+	date_asn(bool opt = false) ;
+	void set_value(long ldzien, long lmiesiac, long lrok) ;
+	void get_value(long &ldzien, long &lmiesiac, long &lrok) ;
 
 };
-
-
 
 #endif /* HEADERS_DATE_ASN_H_ */

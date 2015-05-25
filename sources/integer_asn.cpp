@@ -22,6 +22,7 @@ void integer_asn::set_value(long val)
 	}while(val) ;
 
 	length = stosik.size() ;
+	data_can_read = true ;
 }
 
 int integer_asn::try_read_from_stream(std::istream& iss) throw(throw_error_e)

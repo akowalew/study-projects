@@ -50,6 +50,48 @@ int asn_sequence::try_read_from_stream( std::istream &iss) throw(throw_error_e)
 
 	for(unsigned int i = 0 ; i < wektor_elementow.size() ; i++)
 	{
+		/* przypadek następujący :
+		 * odczytujemy nagłówek sekwencji, on deklaruje r_length, ale nawet po zrównaniu
+		 * tej ilości nie mamy wypełnionej jeszcze do końca struktury.
+		 * Więc jeśli okaże się, że pozostałe elementy są opcjonalne, to OK, mamy jednak załadowaną strukturę
+		 * jeśli okaże się, że gdzieś tam jest element obowiązkowy, to mamy niedopasowanie!
+		 */
+
+		if(num_unget == r_length)
+		{
+			bool stan = true ;
+			for(unsigned int j = i ; j < wektor_elementow.size() ; j++)
+				if(wektor_elementow[j]->is_optional() == false)
+				{
+					stan = false ;
+					break ;
+				}
+
+			if(stan == true)
+			{
+				// pozostałe pola są opcjonalne, czyli OK
+				break ;
+			}
+			else
+			{
+				// nie wszystkie pozostałe pola są opcjonalne. mamy niedopasowanie, przerywamy
+
+				// pozostaje nam tylko oddanie znaków tych, co dobrze się wczytały
+				for(uint8_t k = 0 ; k < num_unget*2 ; k++) // oktet = 2 znaki
+					iss.unget() ;
+
+				// dodatkowo musimy oddać nasze znaki TAGu i LENGTHu, łącznie cztery
+				iss.unget() ; iss.unget() ; iss.unget() ; iss.unget() ;
+
+				// trzeba zaznaczyć we wszystkich poprzednich, że jednak nie można z nich czytać
+				for(int k = i ; k >= 0 ; k--)
+					wektor_elementow[k]->data_can_read = false ;
+
+				return -1 ; // nie pasuje!
+			}
+		}
+
+
 		try
 		{ tmp = wektor_elementow[i]->try_read_from_stream(iss) ; }
 		catch(throw_error_e &ex)
@@ -66,7 +108,7 @@ int asn_sequence::try_read_from_stream( std::istream &iss) throw(throw_error_e)
 			if(wektor_elementow[i]->data_is_optional)
 				continue ; // jest opcjonalny, możemy opuścić i spróbować dla następnego
 			else
-			{
+			{//ok
 				// element MUSI pasować, a tak nie jest.
 				// mamy zatem niedopasowanie, trzeba zwrócić do strumienia odpowiednią ilość znaków
 
@@ -82,7 +124,7 @@ int asn_sequence::try_read_from_stream( std::istream &iss) throw(throw_error_e)
 				for(int j = i ; j >= 0 ; j--)
 					wektor_elementow[j]->data_can_read = false ;
 
-				return false ; // nie pasuje!
+				return -1 ; // nie pasuje!
 			}
 		}
 		else
@@ -111,7 +153,25 @@ int asn_sequence::try_read_from_stream( std::istream &iss) throw(throw_error_e)
 	}
 
 	if(num_unget != r_length)
-		throw DATA_FAIL ;
+	{
+		if(num_unget > r_length) // wczytaliśmy więcej niż powinniśmy, jest to błąd danych
+			throw DATA_FAIL ;
+		else // wczytaliśmy mniej, niż powinniśmy, więc być może te dane są dla innej sekwencji, mającej więcej pól
+		{
+			// pozostaje nam tylko oddanie znaków tych, co dobrze się wczytały
+			for(uint8_t k = 0 ; k < num_unget*2 ; k++) // oktet = 2 znaki
+				iss.unget() ;
+
+			// dodatkowo musimy oddać nasze znaki TAGu i LENGTHu, łącznie cztery
+			iss.unget() ; iss.unget() ; iss.unget() ; iss.unget() ;
+
+			// trzeba zaznaczyć we wszystkich poprzednich, że jednak nie można z nich czytać
+			for(unsigned int k = 0 ; k < wektor_elementow.size() ; k++)
+				wektor_elementow[k]->data_can_read = false ;
+
+			return -1 ; // nie pasuje!
+		}
+	}
 
 
 	// wszystko ok!
@@ -121,3 +181,16 @@ int asn_sequence::try_read_from_stream( std::istream &iss) throw(throw_error_e)
 	return 1+1+r_length ;
 }
 
+
+uint8_t asn_sequence::get_length()
+{
+	if(!data_can_read)
+		return 0 ;
+
+	// założenie : suma wszystkich długości nie przekroczy 127 !!!
+	uint8_t ret = 0 ;
+	for(int i = 0 ; i < wektor_elementow.size() ; i++)
+		if(wektor_elementow[i]->is_readable())
+			ret += wektor_elementow[i]->get_length() ;
+	return ret ;
+}

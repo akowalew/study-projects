@@ -20,17 +20,8 @@ public :
 
 	void set_value(long val) ;
 
-	long get_value()
-	{
-		return value ;
-	}
-
-	uint8_t get_length()
-	{
-		return length ;
-	}
-
-
+	long get_value() { return value ; }
+	uint8_t get_length() { return length ; }
 
 	bool try_read_tag_and_check(std::istream& iss, uint8_t tag)
 		throw(throw_error_e) ;

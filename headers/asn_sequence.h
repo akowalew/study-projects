@@ -27,15 +27,7 @@ public :
 		wektor_elementow.push_back(pointer) ;
 	}
 
-	uint8_t get_length()
-	{
-		// założenie : suma wszystkich długości nie przekroczy 127 !!!
-		uint8_t ret = 0 ;
-		for(int i = 0 ; i < wektor_elementow.size() ; i++)
-			if(wektor_elementow[i]->is_readable())
-				ret += wektor_elementow[i]->get_length() ;
-		return ret ;
- 	}
+	uint8_t get_length() ;
 
 	int try_read_from_stream( std::istream &ss) throw(throw_error_e);
 
