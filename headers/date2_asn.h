@@ -20,13 +20,7 @@ public :
 	integer_asn dzien, miesiac;
 	string_asn rok ;
 
-	date2_asn(bool opt = false) : asn_sequence(opt), dzien(true), miesiac(true), rok(false)
-	{
-		add_item(&dzien) ;
-		add_item(&miesiac) ;
-		add_item(&rok) ;
-	}
-
+	date2_asn(bool opt = false) ;
 } ;
 
 #endif /* DATE2_ASN_H_ */

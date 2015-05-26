@@ -191,6 +191,6 @@ uint8_t asn_sequence::get_length()
 	uint8_t ret = 0 ;
 	for(int i = 0 ; i < wektor_elementow.size() ; i++)
 		if(wektor_elementow[i]->is_readable())
-			ret += wektor_elementow[i]->get_length() ;
+			ret += wektor_elementow[i]->get_length() + 2 ; // długość + TAG + LENGTH
 	return ret ;
 }

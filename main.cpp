@@ -14,6 +14,7 @@
 #include "headers/integer_asn.h"
 #include "headers/string_asn.h"
 #include "headers/asn_sequence.h"
+#include "headers/czlowiek_asn.h"
 
 using namespace std ;
 
@@ -23,16 +24,20 @@ int main()
 {
 	fstream f ;
 	f.open("file", fstream::out) ;
-	f << "30090201aa0201ff1A01bb" ;
+	f << "30161A02BBDD1A02CCEE0201DC3009020133020144020177" ;
 	f.close() ;
 
 	f.open("file", fstream::in) ;
-	date_asn incior ; date2_asn inc ;
-	cout << incior.try_read_from_stream(f) << endl ;
-	cout << inc.try_read_from_stream(f) << endl ;
+	czlowiek_asn czlowiek ;
+	cout << czlowiek.try_read_from_stream(f) << endl ;
+	cout << czlowiek.is_readable() << ' ' << (int)czlowiek.get_length()  << endl ;
 
-	long a, b, c ;
-	incior.get_value(a, b, c) ;
+	if(czlowiek.is_readable())
+	{
+		cout << czlowiek.imie.get_value() << endl <<
+				czlowiek.naz
+	}
+
 	f.close() ;
 
 	return 0 ;
