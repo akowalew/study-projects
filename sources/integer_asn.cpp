@@ -9,19 +9,9 @@
 
 #include <stack>
 
-void integer_asn::set_value(long val)
+void integer_asn::set_value(integer_type val)
 {
 	value = val ;
-
-	std::stack<uint8_t> stosik ;
-
-	do
-	{
-		stosik.push(val & 0xFF) ;
-		val >>= 8 ;
-	}while(val) ;
-
-	length = stosik.size() ;
 	data_can_read = true ;
 }
 
@@ -43,14 +33,15 @@ int integer_asn::try_read_from_stream(std::istream& iss) throw(throw_error_e)
 	{
 		// mamy zawartość, więc teraz odkodujemy to, co odczytaliśmy.
 		value = 0 ;
-		for(int i = 0 ; i < wektor_zawartosc.size() ; i++)
+		unsigned int sz = wektor_zawartosc.size() - 1 ;
+		for(unsigned int i = 0 ; /*i < wektor_zawartosc.size()*/ ; i++)
 		{
 			value |= wektor_zawartosc[i] ;
+			if(i == sz)
+				break ;
 			value <<= 8 ;
 		}
-		value >>= 8 ;
 
-		length = wektor_zawartosc.size() ;
 		data_can_read = true ; // można odczytać daną
 
 		/* INTEGER jest tak prostym typem, że nie trzeba sprawdzać poprawności
@@ -59,12 +50,51 @@ int integer_asn::try_read_from_stream(std::istream& iss) throw(throw_error_e)
 		 * ze strumienia.
 		 */
 
-		return 1+1+(length) ; // 1 TAGu, 1 LENGTH, +LENGTH zawartości, bo mamy LENGTH oktetów
+		return 1+1+(wektor_zawartosc.size()) ; // 1 TAGu, 1 LENGTH, +LENGTH zawartości, bo mamy LENGTH oktetów
 		// każdy po dwa znaki
 	}
 }
 
-void integer_asn::write_to_stream(std::ostream& oss)
+void integer_asn::write_to_stream(std::ostream& oss) throw(throw_error_e)
 {
+	if(!is_readable())
+		throw DATA_FAIL ;
+	write_tag_length(oss) ;
 
+	// zapisujemy wartość
+	uint8_t len = get_length() ;
+	uint8_t octet ;
+
+	for(int i = len-1 ; i >= 0 ; i--)
+	{
+		octet = (value >> (8 * i)) & 0xFF ;
+		oss << u8tohex(octet >> 4) ;
+		oss << u8tohex(octet & 0x0F) ;
+	}
+}
+
+uint8_t integer_asn::get_length() const
+{
+	if(value < 0) // na samym początku jest jedynka, więc trzeba zapisać całą liczbę
+		return sizeof(value) ;
+	integer_type val = value ;
+	uint8_t ret = 0 ;
+	do
+	{
+		val >>= 8 ;
+		ret++ ;
+	}while(val) ;
+
+	return ret ;
+}
+
+bool integer_asn::operator==(const asn_structure& comp) const
+{
+	if(typeid(comp) != typeid(*this))
+		return false ;
+	else
+	{
+		const integer_asn *tmp = dynamic_cast<const integer_asn*>(&comp) ;
+		return ((tmp != nullptr) && (*this == *tmp)) ;
+	}
 }

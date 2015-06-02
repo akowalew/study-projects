@@ -25,10 +25,9 @@ int string_asn::try_read_from_stream( std::istream &iss) throw(throw_error_e)
 		// mamy zawartość, więc teraz odkodujemy to, co odczytaliśmy.
 		// po prostu odczytujemy znaki
 		value.resize(wektor_zawartosc.size()) ;
-		for(int i = 0 ; i < wektor_zawartosc.size() ; i++)
+		for(unsigned int i = 0 ; i < wektor_zawartosc.size() ; i++)
 			value[i] = wektor_zawartosc[i] ;
 
-		length = wektor_zawartosc.size() ;
 		data_can_read = true ; // można odczytać daną
 
 		/* INTEGER jest tak prostym typem, że nie trzeba sprawdzać poprawności
@@ -37,7 +36,7 @@ int string_asn::try_read_from_stream( std::istream &iss) throw(throw_error_e)
 		 * ze strumienia.
 		 */
 
-		return 1+1+(length) ; // 1 TAGu, 1 LENGTH, +LENGTH zawartości, bo mamy LENGTH oktetów
+		return 1+1+(get_length()) ; // 1 TAGu, 1 LENGTH, +LENGTH zawartości, bo mamy LENGTH oktetów
 		// każdy po dwa znaki
 	}
 }
@@ -45,7 +44,33 @@ int string_asn::try_read_from_stream( std::istream &iss) throw(throw_error_e)
 void string_asn::set_value(std::string val)
 {
 	value = val ;
-	length = val.size() ;
 	data_can_read = true ;
 }
 
+
+void string_asn::write_to_stream(std::ostream & oss) throw(throw_error_e)
+{
+	if(!is_readable())
+		throw DATA_FAIL ;
+	write_tag_length(oss) ;
+	uint8_t u ;
+
+	for(std::string::iterator it = value.begin() ;
+			it != value.end() ; it++)
+	{
+		u = static_cast<uint8_t>(*it) ;
+		oss << u8tohex(u >> 4) ;
+		oss << u8tohex(u & 0x0F) ;
+	}
+}
+
+bool string_asn::operator==(const asn_structure& comp) const
+{
+	if(typeid(comp) != typeid(*this))
+		return false ;
+	else
+	{
+		const string_asn *tmp = dynamic_cast<const string_asn*>(&comp) ;
+		return ((tmp != nullptr) && (*this == *tmp)) ;
+	}
+}

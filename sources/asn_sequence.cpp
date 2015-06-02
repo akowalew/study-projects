@@ -176,21 +176,106 @@ int asn_sequence::try_read_from_stream( std::istream &iss) throw(throw_error_e)
 
 	// wszystko ok!
 	data_can_read = true ;
-	length = num_unget ;
 
 	return 1+1+r_length ;
 }
 
 
-uint8_t asn_sequence::get_length()
+uint8_t asn_sequence::get_length() const
 {
-	if(!data_can_read)
-		return 0 ;
-
 	// założenie : suma wszystkich długości nie przekroczy 127 !!!
 	uint8_t ret = 0 ;
-	for(int i = 0 ; i < wektor_elementow.size() ; i++)
+	for(unsigned int i = 0 ; i < wektor_elementow.size() ; i++)
 		if(wektor_elementow[i]->is_readable())
 			ret += wektor_elementow[i]->get_length() + 2 ; // długość + TAG + LENGTH
 	return ret ;
+}
+
+void asn_sequence::write_to_stream(std::ostream &oss) throw(throw_error_e)
+{
+	if(!is_readable())
+		throw DATA_FAIL ;
+
+	write_tag_length(oss) ;
+
+	for(std::vector<asn_structure*>::iterator it = wektor_elementow.begin() ;
+			it != wektor_elementow.end() ; it++)
+	{
+		if((*it)->is_readable())
+		{
+			try { (*it)->write_to_stream(oss) ; }
+			catch(throw_error_e err) { throw err ; }
+		}
+		else // obiekt niemożliwy do odczytu
+		{
+			if(!(*it)->is_optional())
+				throw DATA_FAIL ;
+		}
+	}
+}
+
+bool asn_sequence::is_readable() const
+{
+	bool can_read  = true ;
+	unsigned int ileNie = 0 ;
+
+	for(unsigned int i = 0 ; i < wektor_elementow.size() ; i++)
+		if( (!wektor_elementow[i]->is_readable()) )
+		{
+			if(!wektor_elementow[i]->is_optional())
+			{
+				can_read = false ;
+				break ;
+			}
+			ileNie++ ;
+		}
+
+	if(can_read && (ileNie == wektor_elementow.size()))
+		can_read = false ; // żadnego nie ma do odczytu przecież, nawet jeśli wszystkie są opcjonalne
+
+	return can_read ;
+}
+
+bool asn_sequence::operator==(const asn_sequence& comp) const
+{
+	// podstawowe parametry oraz długości wektorów wskaźników musza się zgadzać
+	if ( (!asn_structure::operator==(comp)) || (wektor_elementow.size() != comp.wektor_elementow.size()))
+		return false ;
+
+	for(unsigned int i = 0 ; i < wektor_elementow.size(); i++)
+	{
+		asn_structure &s1 = *wektor_elementow[i] ;
+		asn_structure &s2 = *comp.wektor_elementow[i] ;
+
+		if(typeid(s1) == typeid(s2)) // czy oba elementy mają zgodne typy?
+		{
+			if(!(s1 == s2)) // wywołujemy przeciążony wirtualnie operator
+				return false ;
+		}
+		else // niezgodność typów
+			return false ;
+	}
+	return true ;
+}
+
+
+bool asn_sequence::operator==(const asn_structure& comp) const
+{
+	if(typeid(comp) != typeid(*this))
+		return false ;
+	else
+	{
+		const asn_sequence *tmp = dynamic_cast<const asn_sequence*>(&comp) ;
+		return ((tmp != nullptr) && (*this == *tmp)) ;
+	}
+}
+
+asn_sequence& asn_sequence::operator=(const asn_sequence& obj)
+{
+	if(this != &obj)
+	{
+		wektor_elementow.clear() ;
+		(asn_structure&)(*this) = obj ;
+	}
+	return *this ;
 }

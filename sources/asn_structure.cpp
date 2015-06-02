@@ -7,7 +7,7 @@
 
 #include "../headers/asn_structure.h"
 
-uint8_t asn_structure::hextou8(char c)
+uint8_t asn_structure::hextou8(char c) const
 {
 	// funkcja konwertująca znak oznaczający cyfrę z systemu szesnastkowego
 	// na wartość dziesiętną
@@ -17,7 +17,7 @@ uint8_t asn_structure::hextou8(char c)
 		return tolower(c) - 'a' + 10 ;
 }
 
-uint8_t asn_structure::read_octet(std::istream& iss) throw(throw_error_e)
+uint8_t asn_structure::read_octet(std::istream& iss) const throw(throw_error_e)
 {
 	// wczytujemy dwa znaki
 	char c1, c2 ;
@@ -110,4 +110,23 @@ bool asn_structure::try_read_all(	std::istream &iss,
 	catch(throw_error_e &err) { throw err ; }
 
 	return true ;
+}
+
+char asn_structure::u8tohex(uint8_t u8) const
+{
+	if(u8 >= 10)
+		return 'a' + (u8-10) ;
+	else
+		return '0' + (u8) ;
+}
+
+void asn_structure::write_tag_length(std::ostream &oss)
+{
+	// piszemy pierw TAG
+	oss << u8tohex(tag >> 4) ;
+	oss << u8tohex(tag & 0x0F) ;
+
+	uint8_t len = get_length() ;
+	oss << u8tohex(len >> 4) ;
+	oss << u8tohex(len & 0x0F) ;
 }

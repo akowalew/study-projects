@@ -7,7 +7,8 @@
 
 #include "../headers/date_asn.h"
 
-date_asn::date_asn(bool opt) : asn_sequence(opt), dzien(true), miesiac(true), rok(false)
+date_asn::date_asn(bool opt_dzien, bool opt_miesiac, bool opt_rok, bool opt)
+	: asn_sequence(opt), dzien(opt_dzien), miesiac(opt_miesiac), rok(opt_rok)
 {
 	add_item(&dzien) ;
 	add_item(&miesiac) ;
