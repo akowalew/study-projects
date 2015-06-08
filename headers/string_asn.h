@@ -58,7 +58,7 @@ public :
 	 *
 	 * @see asn_structure::write_to_stream(...)
 	 */
-	void write_to_stream(std::ostream &ss) throw(throw_error_e);
+	void write_to_stream(std::ostream &ss) const throw(throw_error_e);
 
 	/**
 	 * \brief Czy dwa napisy są sobie równe?
@@ -76,6 +76,10 @@ public :
 	 * @param comp string do porównania
 	 */
 	bool operator==(const asn_structure& comp) const ;
+
+	string_asn& operator=(const string_asn& obj) ;
+
+	asn_structure& operator=(const asn_structure &obj) throw(throw_error_e) ;
 };
 
 #endif /* HEADERS_STRING_ASN_H_ */

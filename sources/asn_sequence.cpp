@@ -191,20 +191,20 @@ uint8_t asn_sequence::get_length() const
 	return ret ;
 }
 
-void asn_sequence::write_to_stream(std::ostream &oss) throw(throw_error_e)
+void asn_sequence::write_to_stream(std::ostream &oss) const throw(throw_error_e)
 {
 	if(!is_readable())
 		throw DATA_FAIL ;
 
 	write_tag_length(oss) ;
 
-	for(std::vector<asn_structure*>::iterator it = wektor_elementow.begin() ;
+	for(std::vector<asn_structure*>::const_iterator it = wektor_elementow.begin() ;
 			it != wektor_elementow.end() ; it++)
 	{
 		if((*it)->is_readable())
 		{
 			try { (*it)->write_to_stream(oss) ; }
-			catch(throw_error_e err) { throw err ; }
+			catch(throw_error_e &err) { throw err ; }
 		}
 		else // obiekt niemożliwy do odczytu
 		{
@@ -273,9 +273,51 @@ bool asn_sequence::operator==(const asn_structure& comp) const
 asn_sequence& asn_sequence::operator=(const asn_sequence& obj)
 {
 	if(this != &obj)
-	{
-		wektor_elementow.clear() ;
-		(asn_structure&)(*this) = obj ;
+	{	// w obu sekwencjach musi zgadzać się nagłówek, czyli to, czy dana sekwencja jest opcjonalna
+		// oraz czy mają te same długości wektorów wskaźników
+		if( (is_optional() != obj.is_optional()) ||
+			(wektor_elementow.size() != obj.wektor_elementow.size()) )
+			throw OBJECT_FAIL ;
+
+		// sprawdzamy, czy dla każdego obiektu z listy zachodzą równości nagłówków
+		// ten sam tag i ta sama opcjonalność
+		for(unsigned int i = 0 ; i < wektor_elementow.size() ; i++)
+		{
+			asn_structure &s1 = *wektor_elementow[i] ;
+			asn_structure &s2 = *obj.wektor_elementow[i] ;
+
+			if( (s1.is_optional() != s2.is_optional()) || (s1.get_tag() != s2.get_tag()) )
+				throw OBJECT_FAIL ;
+		}
+
+		for(unsigned int i = 0 ; i < wektor_elementow.size() ; i++)
+		{
+			asn_structure &s1 = *wektor_elementow[i] ;
+			asn_structure &s2 = *obj.wektor_elementow[i] ;
+
+			// wszystko się zgadza
+			s1 = s2 ; // zrównaj elementy
+		}
+		this->asn_structure::operator=(obj) ;
 	}
 	return *this ;
 }
+
+asn_structure& asn_sequence::operator=(const asn_structure &obj) throw(throw_error_e)
+{
+	if(this != &obj)
+	{
+		if(get_tag() != obj.get_tag())
+			throw OBJECT_FAIL ;
+		else
+		{
+			asn_sequence &s1 = dynamic_cast<asn_sequence&>(*this) ;
+			const asn_sequence &s2 = dynamic_cast<const asn_sequence&>(obj) ;
+
+			s1 = s2 ;
+		}
+	}
+	return *this ;
+}
+
+

@@ -18,6 +18,8 @@ enum throw_error_e //! Typ wyliczeniowy potrzebny przy rzucaniu wyjątków
 	/** \brief Błąd danych w strumieniu wejściowym
 	 * 	Występuje, gdy np. */
 	DATA_FAIL,
+
+	OBJECT_FAIL
 };
 typedef unsigned char uint8_t ; //!< Typ całkowity 8 bitowy, pojedynczy oktet
 
@@ -79,7 +81,7 @@ public :
 	 * 	Zapisuje kolejno [TAG][LENGTH][CONTENT] w postaci oktetów
 	 * 	@param oss	Strumień wyjściowy, do którego ładowane będą dane
 	 */
-	virtual void write_to_stream(std::ostream& oss) = 0 ;
+	virtual void write_to_stream(std::ostream& oss) const = 0  ;
 
 	/**
 	 * \brief Czy dwie struktury są sobie równe?
@@ -93,6 +95,9 @@ public :
 				 (is_readable() == comp.is_readable())) ;
 	}
 
+	virtual ~asn_structure() { };
+
+	virtual asn_structure& operator= (const asn_structure &obj) throw(throw_error_e) ;
 private :
 
 	bool try_read_tag_and_check(std::istream& iss, uint8_t tag)
@@ -141,7 +146,8 @@ protected:
 	 *
 	 * @param oss strumień wyjściowy, do którego ładujemy dane
 	 */
-	void write_tag_length(std::ostream &oss) ;
+	void write_tag_length(std::ostream &oss) const ;
+
 
 };
 

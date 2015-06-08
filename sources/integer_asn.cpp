@@ -55,7 +55,7 @@ int integer_asn::try_read_from_stream(std::istream& iss) throw(throw_error_e)
 	}
 }
 
-void integer_asn::write_to_stream(std::ostream& oss) throw(throw_error_e)
+void integer_asn::write_to_stream(std::ostream& oss) const throw(throw_error_e)
 {
 	if(!is_readable())
 		throw DATA_FAIL ;
@@ -97,4 +97,32 @@ bool integer_asn::operator==(const asn_structure& comp) const
 		const integer_asn *tmp = dynamic_cast<const integer_asn*>(&comp) ;
 		return ((tmp != nullptr) && (*this == *tmp)) ;
 	}
+}
+
+integer_asn& integer_asn::operator=(const integer_asn& obj)
+{
+	if(this != &obj)
+	{
+		value = obj.get_value() ;
+		this->asn_structure::operator=(obj) ;
+	}
+	return *this ;
+}
+
+asn_structure& integer_asn::operator=(const asn_structure &obj) throw(throw_error_e)
+{
+	if(this != &obj)
+	{
+		if(get_tag() != obj.get_tag())
+			throw OBJECT_FAIL ;
+		else
+		{
+			integer_asn &s1 = dynamic_cast<integer_asn&>(*this) ;
+			const integer_asn &s2 = dynamic_cast<const integer_asn&>(obj) ;
+
+			s1.value = s2.get_value() ;
+			s1.asn_structure::operator=(s2) ;
+		}
+	}
+	return *this ;
 }

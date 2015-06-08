@@ -70,7 +70,7 @@ public :
 	/**
 	 * \brief Zapisuje całą sekwencję do pliku.
 	 */
-	void write_to_stream(std::ostream &ss) throw(throw_error_e) ;
+	void write_to_stream(std::ostream &ss) const throw(throw_error_e) ;
 
 	/**
 	 * \brief Czy sekwencja jest w całości możliwa do odczytu ?
@@ -108,7 +108,10 @@ public :
 	 * @param obj sekwencja, z której kopiujemy.
 	 */
 	asn_sequence(const asn_sequence& obj) : asn_structure(obj)
-		{ wektor_elementow.clear() ; }
+	{
+		asn_sequence &t = *this ;
+		t = obj ;
+	}
 
 	/**
 	 * \brief Operator przypisania.
@@ -117,6 +120,8 @@ public :
 	 * @see asn_sequence(const asn_sequence& obj)
 	 */
 	asn_sequence& operator=(const asn_sequence& obj) ;
+
+	asn_structure& operator=(const asn_structure &obj) throw(throw_error_e) ;
 };
 
 

@@ -17,13 +17,12 @@ using namespace std ;
 
 TEST(SequenceTest, TestKonstruktora)
 {
-	asn_sequence tmp ;
+	asn_sequence tmp, tmp2(true) ;
 	EXPECT_EQ(0, tmp.is_optional()) ;
 	EXPECT_EQ(0, tmp.is_readable()) ;
 	EXPECT_EQ(0x30, tmp.get_tag()) ;
 
-	tmp = asn_sequence(true) ;
-	EXPECT_EQ(true, tmp.is_optional()) ;
+	EXPECT_EQ(true, tmp2.is_optional()) ;
 }
 
 class sekwencjaTestowa : public asn_sequence
@@ -32,12 +31,6 @@ public :
 
 	integer_asn objA ;
 	string_asn 	objB ;
-
-	void save_pointers()
-	{
-		add_item(&objA) ;
-		add_item(&objB) ;
-	}
 
 	sekwencjaTestowa(bool optA = false, bool optB = false, bool opt = false )
 		: asn_sequence(opt), objA(optA), objB(optB)
@@ -50,16 +43,11 @@ public :
 		save_pointers() ;
 	}
 
-	sekwencjaTestowa& operator=(const sekwencjaTestowa& x)
+private :
+	void save_pointers()
 	{
-		if(this != &x)
-		{
-			(asn_sequence&)(*this) = x ;
-			objA = x.objA ;
-			objB = x.objB ;
-			save_pointers() ;
-		}
-		return *this ;
+		add_item(&objA) ;
+		add_item(&objB) ;
 	}
 };
 

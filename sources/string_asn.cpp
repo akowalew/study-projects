@@ -48,14 +48,14 @@ void string_asn::set_value(std::string val)
 }
 
 
-void string_asn::write_to_stream(std::ostream & oss) throw(throw_error_e)
+void string_asn::write_to_stream(std::ostream & oss) const throw(throw_error_e)
 {
 	if(!is_readable())
 		throw DATA_FAIL ;
 	write_tag_length(oss) ;
 	uint8_t u ;
 
-	for(std::string::iterator it = value.begin() ;
+	for(std::string::const_iterator it = value.begin() ;
 			it != value.end() ; it++)
 	{
 		u = static_cast<uint8_t>(*it) ;
@@ -73,4 +73,32 @@ bool string_asn::operator==(const asn_structure& comp) const
 		const string_asn *tmp = dynamic_cast<const string_asn*>(&comp) ;
 		return ((tmp != nullptr) && (*this == *tmp)) ;
 	}
+}
+
+string_asn& string_asn::operator=(const string_asn& obj)
+{
+	if(this != &obj)
+	{
+		value = obj.get_value() ;
+		this->asn_structure::operator=(obj) ;
+	}
+	return *this ;
+}
+
+asn_structure& string_asn::operator=(const asn_structure &obj) throw(throw_error_e)
+{
+	if(this != &obj)
+	{
+		if(get_tag() != obj.get_tag())
+			throw OBJECT_FAIL ;
+		else
+		{
+			string_asn &s1 = dynamic_cast<string_asn&>(*this) ;
+			const string_asn &s2 = dynamic_cast<const string_asn&>(obj) ;
+
+			s1.value = s2.get_value() ;
+			s1.asn_structure::operator=(s2) ;
+		}
+	}
+	return *this ;
 }

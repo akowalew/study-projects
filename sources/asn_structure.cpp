@@ -120,7 +120,7 @@ char asn_structure::u8tohex(uint8_t u8) const
 		return '0' + (u8) ;
 }
 
-void asn_structure::write_tag_length(std::ostream &oss)
+void asn_structure::write_tag_length(std::ostream &oss) const
 {
 	// piszemy pierw TAG
 	oss << u8tohex(tag >> 4) ;
@@ -129,4 +129,19 @@ void asn_structure::write_tag_length(std::ostream &oss)
 	uint8_t len = get_length() ;
 	oss << u8tohex(len >> 4) ;
 	oss << u8tohex(len & 0x0F) ;
+}
+
+asn_structure& asn_structure::operator= (const asn_structure &obj) throw(throw_error_e)
+{
+	if(&obj != this)
+	{
+		if(get_tag() != obj.get_tag())
+			throw OBJECT_FAIL ;
+		else
+		{
+			data_is_optional = obj.is_optional() ;
+			data_can_read = obj.is_readable() ;
+		}
+	}
+	return *this ;
 }

@@ -12,21 +12,20 @@ using namespace std;
 
 TEST(DateTest, TestKonstruktora)
 {
-	date_asn tmp ;
+	date_asn tmp, tmp2(true, true, true, true) ;
 
 	EXPECT_EQ(0, tmp.is_optional()) ;
 	EXPECT_EQ(0, tmp.is_readable()) ;
 	// EXPECT_EQ(0, tmp.get_length()) ; tego nie wykonujemy, bo przecież dane nie są gotowe do odzcytu
 	EXPECT_EQ(0x30, tmp.get_tag()) ;
 
-	tmp = date_asn(true, true, true, true) ;
-	EXPECT_EQ(true, tmp.is_optional()) ;
+	EXPECT_EQ(true, tmp2.is_optional()) ;
 }
 
 TEST(DateTest, TestModyfikacjiBezposredniej)
 {
 	// wszystkie pola składowe są opcjonalne
-	date_asn tmp = date_asn(true, true, true, false) ;
+	date_asn tmp = date_asn(true, true, true, false), tmp1 = date_asn(true, false, true, false) ;
 
 	// na początku data powinna być nie do odczytu, bo nic nie wpisaliśmy do niej
 	EXPECT_EQ(0, tmp.is_readable()) ;
@@ -49,15 +48,14 @@ TEST(DateTest, TestModyfikacjiBezposredniej)
 
 	// inny przykład, zadeklarujmy pewne pola jako obowiązkowe i nie wypełnijmy ich
 	// dzień i rok opcjonalny, miesiąc obowiązkowy
-	tmp = date_asn(true, false, true, false) ;
 
-	tmp.rok.set_value(33) ;
+	tmp1.rok.set_value(33) ;
 	// po wypełnieniu tylko roku, stan daty powinien być nie do odczytania w całości
 	// miesiąc do wypełnienia jest obowiązkowy
-	EXPECT_EQ(0, tmp.is_readable()) ;
-	EXPECT_EQ(0, tmp.dzien.is_readable()) ;
-	EXPECT_EQ(0, tmp.miesiac.is_readable()) ;
-	EXPECT_EQ(1, tmp.rok.is_readable()) ;
+	EXPECT_EQ(0, tmp1.is_readable()) ;
+	EXPECT_EQ(0, tmp1.dzien.is_readable()) ;
+	EXPECT_EQ(0, tmp1.miesiac.is_readable()) ;
+	EXPECT_EQ(1, tmp1.rok.is_readable()) ;
 }
 
 TEST(DateTest, TestStrumienia)
@@ -72,8 +70,3 @@ TEST(DateTest, TestStrumienia)
 	tmp2.try_read_from_stream(strumien) ;
 	EXPECT_EQ(tmp1, tmp2 ) ; // daty powinny się zrównać
 }
-
-
-
-
-

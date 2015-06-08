@@ -56,7 +56,7 @@ public :
 	 *
 	 * @see asn_structure::write_to_stream(...)
 	 */
-	void write_to_stream(std::ostream& oss) throw(throw_error_e);
+	void write_to_stream(std::ostream& oss) const throw(throw_error_e);
 
 	bool operator==(const integer_asn& comp) const
 	{
@@ -65,6 +65,9 @@ public :
 
 	bool operator==(const asn_structure& comp) const ;
 
+	integer_asn& operator=(const integer_asn& obj) ;
+
+	asn_structure& operator=(const asn_structure &obj) throw(throw_error_e) ;
 };
 
 

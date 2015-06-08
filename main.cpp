@@ -10,37 +10,27 @@
 #include <cstring>
 
 #include "headers/date_asn.h"
-#include "headers/date2_asn.h"
 #include "headers/integer_asn.h"
 #include "headers/string_asn.h"
 #include "headers/asn_sequence.h"
 #include "headers/czlowiek_asn.h"
 
+#include <gtest/gtest.h>
+
 using namespace std ;
 
+int main(int argc, char **argv) {
 
+	date_asn i1,
+			 i2 = i1 ;
+	asn_structure &p1 = i1, &p2 = i2 ;
 
-int main()
-{
-	fstream f ;
-	f.open("file", fstream::out) ;
-	f << "30161A02BBDD1A02CCEE0201DC3009020133020144020177" ;
-	f.close() ;
+	i2.dzien.set_value(34) ;
+	i2.rok.set_value(544) ;
+	i1 = i2 ;
 
-	f.open("file", fstream::in) ;
-	czlowiek_asn czlowiek ;
-	cout << czlowiek.try_read_from_stream(f) << endl ;
-	cout << czlowiek.is_readable() << ' ' << (int)czlowiek.get_length()  << endl ;
-
-	if(czlowiek.is_readable())
-	{
-		cout << czlowiek.imie.get_value() << endl <<
-				czlowiek.naz
-	}
-
-	f.close() ;
-
-	return 0 ;
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
 
 
