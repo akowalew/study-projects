@@ -1,8 +1,8 @@
 
 public class OrGate extends LogicGate {
-
+	static int count = 0 ;
 	public OrGate() {
-		super(2, "OR Gate") ;
+		super(2, "OR Gate" + count) ;
 	}
 	
 	@Override

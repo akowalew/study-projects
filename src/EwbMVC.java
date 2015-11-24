@@ -8,8 +8,14 @@ public class EwbMVC {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		
-		View vieww = new View() ;
-		Controller cntrl = new Controller(vieww) ;
+		Model model = new Model() ;
+		Controller controller = new Controller(model) ;
+		View view = new View(controller) ;
+		
+		controller.registerView(view);
+		
 	}
+	
+	
 
 }

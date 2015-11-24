@@ -1,18 +1,46 @@
-import java.util.Observable;
-import java.util.Observer;
 
-public class Controller implements Observer {
-
-	View viewVar ;
+public class Controller {
+	private View view ;
+	private Model model ;
 	
-	public Controller(View vieww) {
-		viewVar = vieww ;
+	public Controller(Model model) {
+		this.model = model ;
 	}
 	
-	@Override
-	public void update(Observable o, Object arg) {
-		// TODO Auto-generated method stub
-
+	public void registerView(View view) {
+		this.view = view ;
 	}
-
+	
+	public void unregisterView() {
+		this.view = null ;
+	}
+	
+	void createAndGateRequest() {
+		LogicGate gate ;
+		EwbMVC.p("Zlecam wykonanie Model:createAnd");
+		gate = model.createAnd() ;
+		
+		if(view != null)
+			view.addLogicGate(gate);
+	}
+	
+	void createOrGateRequest() {
+		LogicGate gate ;
+		EwbMVC.p("Zlecam wykonanie Model:createOr");
+		gate = model.createOr() ;
+	
+		if(view != null)
+			view.addLogicGate(gate);
+	}
+	
+	void createNotGateRequest() {
+		LogicGate gate ;
+		EwbMVC.p("Zlecam wykonanie Model:createNot");
+		gate = model.createNot() ;
+		
+		if(view != null)
+			view.addLogicGate(gate);
+	}
+	
+	
 }

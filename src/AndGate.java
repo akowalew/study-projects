@@ -1,9 +1,10 @@
 import java.util.Observable;
 
 public class AndGate extends LogicGate {
+	private static int count = 0 ;
 	
 	public AndGate() {
-		super(2, "AND GATE") ;
+		super(2, "AND GATE" + count) ;
 	}
 	
 	@Override
