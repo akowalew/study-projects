@@ -8,13 +8,19 @@ import java.util.Observer;
 import java.util.Vector;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+
 import java.awt.* ;
 
 public class View  {
  
 	private JFrame frame ;
+	
 	private JButton btn1, btn2, btn3 ;
+	
 	private JLabel lbl1, lbl2 ;
+	
 	private JMenuBar menuBar ;
 	
 	private JMenu programMenu, workspaceMenu ;
@@ -25,8 +31,8 @@ public class View  {
 	private JMenuItem addOrGateAction ;
 	private JMenuItem addNotGateAction ;
 	
-	private JList listBox ;
-	private Vector listData ;
+	private JList<LogicGate> listBox ;
+	private Vector<LogicGate> listData ;
 	
 	Controller controller ;
 	
@@ -85,17 +91,26 @@ public class View  {
 		});
 		
 
-		listData = new Vector() ;
-		listBox = new JList(listData) ;
-		listBox.setPreferredSize(new Dimension(200, 200));
-		
+		listData = new Vector<LogicGate>() ;
+		listBox = new JList<LogicGate>(listData) ;
+		//listBox.setPreferredSize(new Dimension(200, 200));
+		listBox.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		listBox.setLayoutOrientation(JList.VERTICAL);
+		JScrollPane listScroller = new JScrollPane(listBox) ;
+		listScroller.setPreferredSize(new Dimension(100, 300));
+		listBox.addListSelectionListener(new ListSelectionListener() {
+			@Override public void valueChanged(ListSelectionEvent e) {
+				listItemPressed(e) ;
+			}
+		});
+ 		
 		lbl1 = new JLabel("                       ") ;
 		lbl2 = new JLabel("                       ") ;
 		
 		pane.setLayout(new FlowLayout());
 		
 		
-		pane.add(listBox) ;
+		pane.add(listScroller) ;
 		pane.add(lbl1) ;
 		pane.add(lbl2) ;
 		
@@ -128,28 +143,39 @@ public class View  {
 	private void createNotGateButtonPressed(ActionEvent e) {
 		controller.createNotGateRequest();
 	}
+	
+	private void listItemPressed(ListSelectionEvent e) {
+		JList<LogicGate> obj ;
+		if(e.getValueIsAdjusting() == false) {
+			if(e.getSource() == listBox) {
+				obj = (JList<LogicGate>) e.getSource() ;
+				if(obj.getSelectedIndex() >= 0) {
+					
+					labelSetText(lbl2, "" + obj.getSelectedIndex()) ;
+					
+				}
+			}
+		}
+	}
 
 	public void addLogicGate(LogicGate gate) {
-		lbl1SetText(gate.getName());
-		listBoxAddElem(gate.getName());
+		labelSetText(lbl1, gate.toString());
+		listBoxAddElem(gate);
 	}
 	
-	private void listBoxAddElem(final String text) {
+	private void listBoxAddElem(final LogicGate gate) {
+		listData.addElement(gate);
 		SwingUtilities.invokeLater(new Runnable() {
-			
-			@Override
-			public void run() {
-				// TODO Auto-generated method stub
-				listData.addElement(text);
+			@Override public void run() {
 				listBox.setListData(listData);
 			}
 		});
 	}
-	private void lbl1SetText(final String text) {
+	
+	private void labelSetText(final JLabel label, final String text) {
 		SwingUtilities.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				lbl1.setText(text);
+			@Override public void run() {
+				label.setText(text);
 			}
 		}) ;
 	}

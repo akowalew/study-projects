@@ -41,4 +41,8 @@ public abstract class LogicGate extends Observable {
 		return name ;
 	}
 	
+	public String toString() {
+		return name ;
+	}
+	
 }

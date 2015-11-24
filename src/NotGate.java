@@ -3,7 +3,7 @@ public class NotGate extends LogicGate {
 	static int count = 0 ;
 	
 	public NotGate() {
-		super(1, "NOT Gate" + count) ;
+		super(1, "NOT" + count++) ;
 	}
 	
 	@Override
