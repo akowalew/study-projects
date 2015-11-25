@@ -11,9 +11,10 @@ import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+
 import java.awt.* ;
 
-public class View  {
+public class View extends AbstractView  {
  
 	private JFrame frame ;
 	
@@ -34,7 +35,8 @@ public class View  {
 	private JList<LogicGate> listBox ;
 	private Vector<LogicGate> listData ;
 	
-	Controller controller ;
+	private final Controller controller ;
+	private final ProcessQueue queue ;
 	
 	private void initComponents() {
 		frame = new JFrame("View") ;
@@ -63,30 +65,28 @@ public class View  {
 		workspaceMenu.add(addNotGateAction) ;
 		
 		addAndGateAction.addActionListener(new ActionListener() {			
-			@Override
-			public void actionPerformed(ActionEvent e) {
+			@Override public void actionPerformed(ActionEvent e) {
 				createAndGateButtonPressed(e);				
 			}
 		});
 		
 		addOrGateAction.addActionListener(new ActionListener() {			
-			@Override
-			public void actionPerformed(ActionEvent e) {
+			@Override public void actionPerformed(ActionEvent e) {
 				createOrGateButtonPressed(e);
 			}
 		});
 
 		addNotGateAction.addActionListener(new ActionListener() {			
-			@Override
-			public void actionPerformed(ActionEvent e) {
+			@Override public void actionPerformed(ActionEvent e) {
 				createNotGateButtonPressed(e);
 			}
 		});
 		
 		exitAction.addActionListener(new ActionListener() {			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+			@Override public void actionPerformed(ActionEvent e) {
+				frame.setVisible(false);
+				frame.dispose(); 
+				System.exit(0);
 			}
 		});
 		
@@ -109,17 +109,17 @@ public class View  {
 		
 		pane.setLayout(new FlowLayout());
 		
-		
 		pane.add(listScroller) ;
 		pane.add(lbl1) ;
 		pane.add(lbl2) ;
 		
 		frame.pack(); 
-		
 	}
 	
 	public View(Controller controller) {
 		this.controller = controller ;
+		queue = controller.getViewsQueue() ;
+		
 		initComponents() ;
 		
 		SwingUtilities.invokeLater(new Runnable() {
@@ -133,32 +133,43 @@ public class View  {
 	}
 
 	private void createAndGateButtonPressed(ActionEvent e) {
-		controller.createAndGateRequest();
+		queue.addProcess(new Runnable() {
+			@Override public void run() {				
+				controller.createAndGateRequest();
+			}
+		});
 	}
 	
 	private void createOrGateButtonPressed(ActionEvent e) {
-		controller.createOrGateRequest();
+		queue.addProcess(new Runnable() {
+			@Override public void run() {				
+				controller.createOrGateRequest();
+			}
+		});
 	}
 	
 	private void createNotGateButtonPressed(ActionEvent e) {
-		controller.createNotGateRequest();
+		queue.addProcess(new Runnable() {
+			@Override public void run() {				
+				controller.createNotGateRequest();
+			}
+		});
 	}
 	
 	private void listItemPressed(ListSelectionEvent e) {
 		JList<LogicGate> obj ;
 		if(e.getValueIsAdjusting() == false) {
 			if(e.getSource() == listBox) {
+				
 				obj = (JList<LogicGate>) e.getSource() ;
 				if(obj.getSelectedIndex() >= 0) {
-					
 					labelSetText(lbl2, "" + obj.getSelectedIndex()) ;
-					
 				}
 			}
 		}
 	}
 
-	public void addLogicGate(LogicGate gate) {
+	private void addLogicGate(LogicGate gate) {
 		labelSetText(lbl1, gate.toString());
 		listBoxAddElem(gate);
 	}
@@ -178,5 +189,17 @@ public class View  {
 				label.setText(text);
 			}
 		}) ;
+	}
+
+	@Override
+	public void modelUpdate(Observable arg0, Object arg1) {
+		EwbMVC.p("View: Model się zmienił");
+		// TODO Auto-generated method stub
+		if(arg1 instanceof Model.ModelMessage) {
+			Model.ModelMessage msg = (Model.ModelMessage) arg1 ;
+			if(msg.getMessage() == Model.MessageType.CREATED_OBJECT) {
+				addLogicGate((LogicGate)msg.getObject());
+			}
+ 		}
 	}
 }

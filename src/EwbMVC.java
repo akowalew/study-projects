@@ -5,15 +5,18 @@ public class EwbMVC {
 		System.out.println(o) ;
 	}
 	
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		
+	public EwbMVC() {
 		Model model = new Model() ;
 		Controller controller = new Controller(model) ;
 		View view = new View(controller) ;
 		
-		controller.registerView(view);
+		controller.addView(view);
 		
+		model.initDefault();
+	}
+	
+	public static void main(String[] args) {
+		new EwbMVC() ;
 	}
 	
 	

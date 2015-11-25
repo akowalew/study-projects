@@ -1,46 +1,58 @@
+import java.util.Observable;
 
-public class Controller {
-	private View view ;
-	private Model model ;
+/*
+ * Kontroler
+ * - Kontroler przechwytuje zdarzenia modeli i wysyła je do widoków
+ * - Kontroler jest interfejsem do modeli. Może nie wykorzystać wszystkich ich 
+ * możliwości, wedle uznania
+ * - Do kontrolera odwoływać się będzie widok poprzez jego publiczne metody
+ * - Jest napisany pod konkretny schemat modelu (jednego modelu)
+ */
+
+public class Controller extends AbstractController {
+	private final Model model ;
+	private final ProcessQueue viewsQueue ;
+	private final ProcessQueue modelQueue ;
 	
 	public Controller(Model model) {
 		this.model = model ;
+		model.addObserver(this);
+		viewsQueue = new ProcessQueue() ;
+		modelQueue = new ProcessQueue() ;
 	}
 	
-	public void registerView(View view) {
-		this.view = view ;
-	}
-	
-	public void unregisterView() {
-		this.view = null ;
+	public ProcessQueue getViewsQueue() {
+		return viewsQueue ;
 	}
 	
 	void createAndGateRequest() {
-		LogicGate gate ;
 		EwbMVC.p("Zlecam wykonanie Model:createAnd");
-		gate = model.createAnd() ;
 		
-		if(view != null)
-			view.addLogicGate(gate);
+		modelQueue.addProcess(new Runnable() {
+			@Override public void run() {
+				model.createAnd() ;
+			}
+		}) ; 
 	}
 	
 	void createOrGateRequest() {
-		LogicGate gate ;
 		EwbMVC.p("Zlecam wykonanie Model:createOr");
-		gate = model.createOr() ;
-	
-		if(view != null)
-			view.addLogicGate(gate);
+
+		modelQueue.addProcess(new Runnable() {
+			@Override public void run() {
+				model.createOr() ;
+			}
+		}) ;
 	}
 	
 	void createNotGateRequest() {
-		LogicGate gate ;
 		EwbMVC.p("Zlecam wykonanie Model:createNot");
-		gate = model.createNot() ;
 		
-		if(view != null)
-			view.addLogicGate(gate);
+		modelQueue.addProcess(new Runnable() {
+			@Override public void run() {
+				model.createNot() ;
+			}
+		}); 
 	}
-	
 	
 }
