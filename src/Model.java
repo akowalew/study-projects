@@ -18,6 +18,7 @@ public class Model extends AbstractModel {
 		AndGate gate = new AndGate() ;
 		logicGates.add(gate) ;
 		andGates.add(gate) ;
+		
 		this.setChanged();
 		notifyObservers(new ModelMessage(MessageType.CREATED_OBJECT, gate));
 		return gate ;
@@ -27,6 +28,7 @@ public class Model extends AbstractModel {
 		EwbMVC.p("Model: Dostałem polecenie createOr");
 		OrGate gate = new OrGate() ;
 		logicGates.add(gate) ;
+		
 		this.setChanged();
 		notifyObservers(new ModelMessage(MessageType.CREATED_OBJECT, gate));
 		return gate ;
@@ -36,6 +38,7 @@ public class Model extends AbstractModel {
 		EwbMVC.p("Model: Dostałem polecenie createNot");
 		NotGate gate = new NotGate() ;
 		logicGates.add(gate ) ;
+		
 		this.setChanged();
 		notifyObservers(new ModelMessage(MessageType.CREATED_OBJECT, gate));
 		return gate ;
