@@ -1,20 +1,37 @@
 
+/**
+ * Klasa lącząca cały model MVC w jedność. Utuchamia aplikację
+ * 
+ * @author dicker
+ *
+ */
 public class EwbMVC {
 
-	static void p(Object o) {
+	/**
+	 * Drukuje na ekranie. Zamiennik dla System.out.println(..)
+	 * @param o Obiekt do wydrukowania na ekranie
+	 */
+	public static void p(Object o) {
 		System.out.println(o) ;
 	}
 	
+	
+	/**
+	 * Konstruktor, tworzy Kontroler(który tworzy w sobie egzemplarz Modelu) 
+	 * oraz widok. Dodaje widok do listy widoków Kontrolera
+	 */
 	public EwbMVC() {
-		Model model = new Model() ;
-		Controller controller = new Controller(model) ;
+		Controller controller = new Controller() ;
 		View view = new View(controller) ;
 		
 		controller.addView(view);
-		
-		model.initDefault();
 	}
 	
+	/**
+	 * Metoda główna programu. Wywołuje konstruktor EwbMVC
+	 * @see EwbMVC
+	 * @param args
+	 */
 	public static void main(String[] args) {
 		new EwbMVC() ;
 	}

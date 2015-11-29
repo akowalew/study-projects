@@ -1,6 +1,7 @@
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
+import java.util.ArrayList;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Vector;
@@ -8,7 +9,11 @@ import java.util.Vector;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
+import javax.xml.crypto.Data;
 
 import java.awt.* ;
 
@@ -17,27 +22,23 @@ public class View extends AbstractView  {
 	private JFrame frame ;
 	private Container framePane ;
 	
-	private JButton btn1, btn2, btn3 ;
-	
-	private JLabel lbl1, lbl2 ;
-	
-	private JMenuBar menuBar ;
-	
-	private JMenu programMenu, workspaceMenu ;
-	
-	private JMenuItem dialogAction ;
-	private JMenuItem exitAction ;
-	private JMenuItem addAndGateAction ;
-	private JMenuItem addOrGateAction ;
-	private JMenuItem addNotGateAction ;
-	
-	private JList<LogicGate> listBox ;
-	private Vector<LogicGate> listData ;
-	
 	private final Controller controller ;
 	private final ProcessQueue queue ;
 	
+	private MyListBox listbox ;
+	private MyTable table ;
+	
 	private void initMenuComponent() {
+		
+		JMenuBar menuBar ;
+		JMenu programMenu, workspaceMenu ;
+		
+		JMenuItem dialogAction ;
+ 		JMenuItem exitAction ;
+ 		JMenuItem addAndGateAction ;
+ 		JMenuItem addOrGateAction ;
+ 		JMenuItem addNotGateAction ;
+		
 		menuBar = new JMenuBar() ;
 		frame.setJMenuBar(menuBar);
 		
@@ -85,68 +86,77 @@ public class View extends AbstractView  {
 			}
 		});
 	}
-
+	
 	private void initWestBorderComponents() {
+		
+		final int btnSize = 65 ;
+		
 		JPanel panel = new JPanel(new FlowLayout()) ;
 		panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		panel.setPreferredSize(new Dimension(100, 450));
+		panel.setBackground(new Color(100, 100, 100));
 		
-		JButton btn = new JButton("AND");
-		btn.setPreferredSize(new Dimension(70, 70));
+		JButton btn ;
 		
+		btn = new JButton("AND");
+		btn.setPreferredSize(new Dimension(btnSize, btnSize));
+		btn.addActionListener(new ActionListener() {			
+			@Override public void actionPerformed(ActionEvent e) {
+				createAndGateButtonPressed(e);
+			}
+		});
 		panel.add(btn);
-		panel.add(new JButton("OR"));
-		panel.add(new JButton("NOT"));
-		panel.add(new JButton("XOR"));
+		
+		btn = new JButton("OR");
+		btn.setPreferredSize(new Dimension(btnSize, btnSize));
+		btn.addActionListener(new ActionListener() {			
+			@Override public void actionPerformed(ActionEvent e) {
+				createOrGateButtonPressed(e);
+			}
+		});
+		panel.add(btn);
+		
+		btn = new JButton("NOT") ;
+		btn.setPreferredSize(new Dimension(btnSize,btnSize));
+		btn.addActionListener(new ActionListener() {			
+			@Override public void actionPerformed(ActionEvent e) {
+				createNotGateButtonPressed(e);
+			}
+		});
+		panel.add( btn);
+		
+
 		framePane.add(panel, BorderLayout.WEST) ;
 	}
 	
 	private void initEastBorderComponents() {
 		JPanel panel = new JPanel(new FlowLayout()) ;
 		panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+		panel.setBackground(new Color(150,150,150));
+		
 		final int prefferedWidth = 200 ;
 		panel.setPreferredSize(new Dimension(prefferedWidth, 450));
-		
-		listData = new Vector<LogicGate>() ;
-		listBox = new JList<LogicGate>(listData) ;
-		//listBox.setPreferredSize(new Dimension(200, 200));
-		listBox.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		listBox.setLayoutOrientation(JList.VERTICAL);
-		listBox.addListSelectionListener(new ListSelectionListener() {
-			@Override public void valueChanged(ListSelectionEvent e) {
-				listItemPressed(e) ;
-			}
-		});
-		
-		JLabel tmplbl = new JLabel("Components List") ;
 
-		JScrollPane listScroller = new JScrollPane(listBox) ;
-		listScroller.setPreferredSize(new Dimension(prefferedWidth-20, 200));
-		
+		JLabel tmplbl = new JLabel("Components List") ;
 		JLabel tmplbl2 = new JLabel("Component info") ;
 		
-		String[] columnNames = { 	"Property",
-									"Value" } ;
-		Object[][] data = {
-				{ "Name", "AND0" },
-				{ "Category", "Logic Gate" },
-				{ "Output0 state", new Boolean(true) },
-				{ "Input0 state", new Boolean(true) },
-				{ "Input1 state", new Boolean(true) }
-		} ;
+		listbox = new MyListBox(prefferedWidth) ;
+		table = new MyTable(prefferedWidth) ;
 		
-		JTable table = new JTable(data, columnNames) ;
-		table.setPreferredScrollableViewportSize(new Dimension(prefferedWidth-20, 150));
-		table.setFillsViewportHeight(true);
-		
-		TableColumn column = table.getColumnModel().getColumn(0) ;
-		column.setPreferredWidth(100);
-
 		panel.add(tmplbl) ;
-		panel.add(listScroller) ;
+		panel.add(listbox.getScrollPane()) ;
 		panel.add(tmplbl2);
-		panel.add(new JScrollPane(table));
+		panel.add(table.getScrollPane());
+		
 		framePane.add(panel, BorderLayout.EAST) ;
+	}
+
+	private void initCenterBorderComponents() {
+		JPanel pane = new JPanel() ;
+		pane.setBackground(new Color(50,50,50));
+		pane.add(new JButton("Siema")) ;
+		
+		framePane.add(pane, BorderLayout.CENTER) ;
 	}
 	
 	private void initComponents() {
@@ -159,9 +169,8 @@ public class View extends AbstractView  {
 		initMenuComponent();
 		initEastBorderComponents() ;
 		initWestBorderComponents();
-
-		lbl1 = new JLabel("   sdadasdasd          ") ;
-		lbl2 = new JLabel("                       ") ;
+		initCenterBorderComponents();
+		
 		
 		frame.pack(); 
 	}
@@ -181,7 +190,7 @@ public class View extends AbstractView  {
 			}
 		});
 	}
-
+	
 	private void createAndGateButtonPressed(ActionEvent e) {
 		queue.addProcess(new Runnable() {
 			@Override public void run() {				
@@ -206,32 +215,8 @@ public class View extends AbstractView  {
 		});
 	}
 	
-	private void listItemPressed(ListSelectionEvent e) {
-		JList<LogicGate> obj ;
-		if(e.getValueIsAdjusting() == false) {
-			if(e.getSource() == listBox) {
-				
-				obj = (JList<LogicGate>) e.getSource() ;
-				if(obj.getSelectedIndex() >= 0) {
-					labelSetText(lbl2, "" + obj.getSelectedIndex()) ;
-				}
-			}
-		}
-	}
-
-	private void addLogicGate(LogicGate gate) {
-		labelSetText(lbl1, gate.toString());
-		listBoxAddElem(gate);
-	}
 	
-	private void listBoxAddElem(final LogicGate gate) {
-		listData.addElement(gate);
-		SwingUtilities.invokeLater(new Runnable() {
-			@Override public void run() {
-				listBox.setListData(listData);
-			}
-		});
-	}
+
 	
 	private void labelSetText(final JLabel label, final String text) {
 		SwingUtilities.invokeLater(new Runnable() {
@@ -241,6 +226,12 @@ public class View extends AbstractView  {
 		}) ;
 	}
 
+	private void addLogicGate(LogicGate gate) {
+		//labelSetText(lbl1, gate.toString());
+		listbox.listBoxAddElem(gate); // dodanie elementu do listy
+		table.showLogicGateInfo(gate);
+	}
+	
 	@Override
 	public void modelUpdate(Observable arg0, Object arg1) {
 		EwbMVC.p("View: Model się zmienił");
@@ -248,8 +239,156 @@ public class View extends AbstractView  {
 		if(arg1 instanceof Model.ModelMessage) {
 			Model.ModelMessage msg = (Model.ModelMessage) arg1 ;
 			if(msg.getMessage() == Model.MessageType.CREATED_OBJECT) {
-				addLogicGate((LogicGate)msg.getObject());
+				LogicGate gate = (LogicGate) msg.getObject() ;
+				addLogicGate(gate) ;
 			}
  		}
+	}
+	
+	private class MyTable {
+		
+		final JTable table ;
+		final JScrollPane scrollPane ;
+		
+		private MyTableModel myTableModel ;
+		
+		class MyTableModel extends AbstractTableModel {
+
+			ArrayList<Object[]> data ;
+			String[] columnNames ;
+			
+			MyTableModel(Object[][] obj, String[] header) {
+				this.columnNames = header ;
+				data = new ArrayList<Object[]>() ;
+				
+				if(obj != null)
+					for(int i = 0 ; i < obj.length ; i++)
+						data.add(obj[i]) ;
+			}
+			
+			@Override public String getColumnName(int index) {
+				return columnNames[index] ;
+			}
+			
+			@Override public int getColumnCount() {
+				return columnNames.length ;
+			}
+
+			@Override public int getRowCount() {
+				return data.size() ;
+			}
+
+			@Override public Object getValueAt(int rowIndex, int columnIndex) {
+				return data.get(rowIndex)[columnIndex];
+			}
+		
+			public void addRow(Object[] e) {
+				data.add(e) ;
+				fireTableDataChanged();
+			}
+			
+			public void deleteRows() {
+				data.clear(); 
+				fireTableDataChanged(); 
+			}
+		}
+		
+		public MyTable(int prefferedWidth) {
+			
+			String[] columnNames = { 	"Property",
+										"Value" } ;
+			
+			myTableModel = new MyTableModel(null, columnNames) ;
+			
+			table = new JTable(myTableModel) ;
+			table.setPreferredScrollableViewportSize(new Dimension(prefferedWidth-20, 150));
+			table.setFillsViewportHeight(true);
+			
+			TableColumn column = table.getColumnModel().getColumn(0) ;
+			column.setPreferredWidth(100);
+			
+			scrollPane = new JScrollPane(table) ;
+		}
+		
+		public JScrollPane getScrollPane() {
+			return scrollPane ;
+		}
+		
+		public void showLogicGateInfo(LogicGate gate) {
+			myTableModel.deleteRows();
+			
+			Object[] row ;
+			
+			row = new Object[2] ;
+			row[0] = new String("Name") ;
+			row[1] = new String(gate.getName()) ;
+			
+			myTableModel.addRow(row);
+			
+			row = new Object[2] ;
+			row[0] = new String("Number of inputs") ;
+			row[1] = new Integer(gate.getInputsSize()) ;
+			
+			myTableModel.addRow(row);
+			
+			for(int i = 0 ; i < gate.getInputsSize() ; i++) {
+				row = new Object[2] ;
+				row[0] = new String("Input " + i + " value") ;
+				row[1] = (new Boolean(gate.getInput(i))).booleanValue() ;
+				myTableModel.addRow(row);
+ 			}
+		}
+	}
+	
+	private class MyListBox {
+		private JList<LogicGate> listBox ;
+		private Vector<LogicGate> listData ;
+		private JScrollPane listScroller ;
+		
+		public MyListBox(int prefferedWidth) {
+			listData = new Vector<LogicGate>() ;
+			listBox = new JList<LogicGate>(listData) ;
+			
+			listBox.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+			listBox.setLayoutOrientation(JList.VERTICAL);
+			listBox.addListSelectionListener(new ListSelectionListener() {
+				@Override public void valueChanged(ListSelectionEvent e) {
+					listItemPressed(e) ;
+				}
+			});
+			
+			listScroller = new JScrollPane(listBox) ;
+			listScroller.setPreferredSize(new Dimension(prefferedWidth-20, 200));
+			
+		}
+		
+		public JScrollPane getScrollPane() {
+			return listScroller ;
+		}
+		
+		private void listItemPressed(ListSelectionEvent e) {
+			JList<LogicGate> obj ;
+			if(e.getValueIsAdjusting() == false) {
+				if(e.getSource() == listBox) {
+					
+					obj = (JList<LogicGate>) e.getSource() ;
+					if(obj.getSelectedIndex() >= 0) {
+						LogicGate gate = obj.getSelectedValue() ;
+						table.showLogicGateInfo(gate);
+						//labelSetText(lbl2, "" + obj.getSelectedIndex()) ;
+					}
+				}
+			}
+		}
+		
+		public void listBoxAddElem(final LogicGate gate) {
+			listData.addElement(gate);
+			SwingUtilities.invokeLater(new Runnable() {
+				@Override public void run() {
+					listBox.setListData(listData);
+				}
+			});
+		}
+		
 	}
 }
