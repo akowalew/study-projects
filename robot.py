@@ -3,47 +3,46 @@
 from time import sleep
 from ev3dev import *
 
-lmotor = large_motor(OUTPUT_D) ; assert lmotor.connected
-rmotor = large_motor(OUTPUT_B) ; assert rmotor.connected
-mmotor = medium_motor(OUTPUT_C) ; assert mmotor.connected
+from threading import Event, Thread
+from utilityFile import *
 
-lmotor.set(speed_regulation_enabled='off', stop_command='brake')
-rmotor.set(speed_regulation_enabled='off', stop_command='brake')
-mmotor.set(speed_regulation_enabled='off', stop_command='hold')
-mmotor.set(duty_cycle_sp=60)
+def call_repeatedly(interval, func):
+    stopped = Event()
+    def loop():
+        while not stopped.wait(interval): # the first call is in `interval` secs
+            func()
+    Thread(target=loop).start()    
+    return stopped.set
 
-lsensor = light_sensor(); assert lsensor.connected
-rsensor = color_sensor(); assert rsensor.connected
-sonar = infrared_sensor(); assert sonar.connected
-touch = touch_sensor(); assert touch.connected
-
-#btn = Button()
-
-def obroc_sonar(pozycja) :
-	mmotor.run_to_abs_pos(position_sp = pozycja)
-
-def czy_sonar_obrocony() :
-	return not mmotor.state
-
-def isButtonPressed():
-	return touch.value() == 1
-
-def rotateRobotSym(value):
-	lmotor.run_to_rel_pos(position_sp = value, duty_cycle_sp = 40)
-	rmotor.run_to_rel_pos(position_sp = -value, duty_cycle_sp = 40)
+#stale
+READ_SENSOR_TIME = 0.02 ;
+PRINT_VALUES_TIME = 0.51 ;
 
 
-def robotFunction():
+isReaded = False
+
+	
+def readSensors() :
+	
+	lval = getLsensor()
+	rval = getRsensor()
+	isReaded = True
+	
+def printValues() :
+	print str(lval) + " " + str(rval)
+	
+
+def robotFunction() :
+	global lval, rval
+	lval = rval = 0
+	
+	lintegral = rintegral = lastErrorR = lastErrorL	= 0
 	isRunning = False
 	isCalibrated = False
-	lblack = -100;
-	lwhite = 1000;
-	rblack = -100;
-	rwhite = 1000;
-	lerror = 20;
-	rerror = 1;
+	
+	global timerReadSensors, timerPrintValues
+
 	while True:
-		#print str(isButtonPressed())
 		if isButtonPressed() == True:
 			if isRunning == True:
 				return
@@ -52,51 +51,61 @@ def robotFunction():
 				sleep(3.0)
 		if isRunning == True:
 			if isCalibrated == False:
-				rotateRobotSym(90)
-				while 'running' in lmotor.state:
-					ltmp = lsensor.value()
-					rtmp = rsensor.value()
-					if ltmp>lblack:
-						lblack = ltmp
-					if ltmp<lwhite:
-						lwhite = ltmp
-					if rtmp>rblack:
-						rblack = rtmp
-					if rtmp<rwhite:
-						rwhite = rtmp
-				print str(lblack) + " "+ str(lwhite) +" " +str(rblack) + " "+ str(rwhite)	
+				global lBlack, lWhite, rBlack, rWhite, eps, lMaxBlack, rMaxBlack
+	
+				parametry = calibrateSensors() 
+				lBlack = parametry[0]
+				lMaxBlack = parametry[1]
+				lWhite = parametry[2]
+				rBlack = parametry[3]
+				rMaxBlack = parametry[4]
+				rWhite = parametry[5]	
 				
-				rotateRobotSym(-180)
-				while 'running' in lmotor.state:
-					ltmp = lsensor.value()
-					rtmp = rsensor.value()
-					if ltmp>lblack:
-						lblack = ltmp
-					if ltmp<lwhite:
-						lwhite = ltmp
-					if rtmp>rblack:
-						rblack = rtmp
-					if rtmp<rwhite:
-						rwhite = rtmp
 				
-				print str(lblack) + " "+ str(lwhite) +" " +str(rblack) + " "+ str(rwhite)
 				
-				rotateRobotSym(90)
 				isCalibrated = True
-			#if isCalibrated == True:
+				timerReadSensors = call_repeatedly(READ_SENSOR_TIME, readSensors)
+				timerPrintValues = call_repeatedly(PRINT_VALUES_TIME, printValues) 
+			else :
+
+				MIN_SPEED = 100 
+				MAX_SPEED = 200
+				 
+				print str(lintegral) + " " + str(rintegral) + " " +str(lastErrorR) + " " + str(lastErrorL)
+
+				lerror = lMaxBlack - lval
+				rerror = rMaxBlack - rval
+
+				lintegral = lintegral + lerror
+				rintegral = rintegral + rerror
+
+				lderivative = lerror - lastErrorL 
+				rderivative = rerror - lastErrorR
+
+				lastErrorL = lerror
+				lastErrorR = rerror
+
+				lcontrol = int(3.0 * lerror + 0.5 * lintegral + 2.0 * lderivative)
+				rcontrol = int(3.0 * rerror + 0.5 * rintegral + 2.0 * rderivative)
+				print str(lcontrol)
+				#lcontrol = int((lval - lBlack) / (lWhite - lBlack))
+				#rcontrol = int((rval - rBlack) / (rWhite - rBlack))
+
+				#lspeed = MIN_SPEED + int(lcontrol * (MAX_SPEED - MIN_SPEED))
+				#rspeed = MIN_SPEED + int(rcontrol * (MAX_SPEED - MIN_SPEED))
+
+				lmotor.run_forever(speed_sp = 50 + lcontrol)
+				rmotor.run_forever(speed_sp = 50 + rcontrol)
 				
-							
-						
-		#mmotor.run_to_abs_pos(position_sp=0)
-		#print("motor state" ,  mmotor.state , mmotor.position, "\n")	
-		#print("sonar", touch.value(), "\n")
-		#if isButtonPressed():
-		#	print "Lewy: " + str(lsensor.value()) + " Prawy: " + str(rsensor.value()) + "\n"
-		#	sleep(3)
 			
-
-
+# main Loop				
 robotFunction()
+
+#kill threads
+timerReadSensors()
+timerPrintValues()
+
+#unlock motors
 lmotor.set(stop_command='coast')
 rmotor.set(stop_command='coast')
 mmotor.set(stop_command='coast')
