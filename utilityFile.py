@@ -30,19 +30,6 @@ def isButtonPressed():
 def rotateRobotSym(value):
 	lmotor.run_to_rel_pos(position_sp = value, duty_cycle_sp = 40)
 	rmotor.run_to_rel_pos(position_sp = -value, duty_cycle_sp = 40)
-
-
-def isLsensorOnLine(value) :
-	if value <= lMaxBlack :
-		return True
-	else :
-		return False
-
-def isRsensorOnLine(value) :
-	if value <= rMaxBlack :
-		return True
-	else :
-		return False
 		
 def getRsensor() :
 	return rsensor.value()
@@ -51,7 +38,6 @@ def getLsensor() :
 	return int(lsensor.float_value())
 
 def calibrateSensors() :
-	global lBlack, lWhite, rBlack, rWhite, eps, lMaxBlack, rMaxBlack
 	
 	# kalbiracja czujnikow
 	#czujnik lewy

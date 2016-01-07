@@ -1,37 +1,9 @@
 #!/usr/bin/python
 
 from time import sleep
-from ev3dev import *
-
-from threading import Event, Thread
-from utilityFile import *
-
-def call_repeatedly(interval, func):
-    stopped = Event()
-    def loop():
-        while not stopped.wait(interval): # the first call is in `interval` secs
-            func()
-    Thread(target=loop).start()    
-    return stopped.set
-
-#stale
-READ_SENSOR_TIME = 0.02 ;
-PRINT_VALUES_TIME = 0.51 ;
-
-
-isReaded = False
-
+from ev3dev import *	
 	
-def readSensors() :
 	
-	lval = getLsensor()
-	rval = getRsensor()
-	isReaded = True
-	
-def printValues() :
-	print str(lval) + " " + str(rval)
-	
-
 def robotFunction() :
 	global lval, rval
 	lval = rval = 0
@@ -51,8 +23,7 @@ def robotFunction() :
 				sleep(3.0)
 		if isRunning == True:
 			if isCalibrated == False:
-				global lBlack, lWhite, rBlack, rWhite, eps, lMaxBlack, rMaxBlack
-	
+			
 				parametry = calibrateSensors() 
 				lBlack = parametry[0]
 				lMaxBlack = parametry[1]
@@ -61,11 +32,7 @@ def robotFunction() :
 				rMaxBlack = parametry[4]
 				rWhite = parametry[5]	
 				
-				
-				
 				isCalibrated = True
-				timerReadSensors = call_repeatedly(READ_SENSOR_TIME, readSensors)
-				timerPrintValues = call_repeatedly(PRINT_VALUES_TIME, printValues) 
 			else :
 
 				MIN_SPEED = 100 
@@ -76,8 +43,8 @@ def robotFunction() :
 				lerror = lMaxBlack - lval
 				rerror = rMaxBlack - rval
 
-				lintegral = lintegral + lerror
-				rintegral = rintegral + rerror
+				lintegral = 0.5 * lintegral + lerror
+				rintegral = 0.5 * rintegral + rerror
 
 				lderivative = lerror - lastErrorL 
 				rderivative = rerror - lastErrorR
@@ -87,23 +54,12 @@ def robotFunction() :
 
 				lcontrol = int(3.0 * lerror + 0.5 * lintegral + 2.0 * lderivative)
 				rcontrol = int(3.0 * rerror + 0.5 * rintegral + 2.0 * rderivative)
-				print str(lcontrol)
-				#lcontrol = int((lval - lBlack) / (lWhite - lBlack))
-				#rcontrol = int((rval - rBlack) / (rWhite - rBlack))
-
-				#lspeed = MIN_SPEED + int(lcontrol * (MAX_SPEED - MIN_SPEED))
-				#rspeed = MIN_SPEED + int(rcontrol * (MAX_SPEED - MIN_SPEED))
-
-				lmotor.run_forever(speed_sp = 50 + lcontrol)
-				rmotor.run_forever(speed_sp = 50 + rcontrol)
+				print str(lcontrol) + " " + str(rcontrol)
 				
-			
+				lmotor.run_forever(speed_sp = 500 + lcontrol - rcontrol)
+				rmotor.run_forever(speed_sp = 500 - lcontrol + rcontrol)
 # main Loop				
 robotFunction()
-
-#kill threads
-timerReadSensors()
-timerPrintValues()
 
 #unlock motors
 lmotor.set(stop_command='coast')
