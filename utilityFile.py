@@ -38,6 +38,9 @@ def getRsensor() :
 def getLsensor() :
 	return int(lsensor.float_value())
 
+def getSonar():
+	return sonar.value()
+
 def calibrateSensors() :
 	
 	# kalbiracja czujnikow
@@ -93,5 +96,5 @@ def calibrateSensors() :
 	sleep(1.0)
 
 	lista = [lBlack, lMaxBlack, lWhite, rBlack, rMaxBlack, rWhite]
-	sound.speak("FUCK YOU! FUCK YOU!", True)
+	sound.speak("Show me your dick", True)
 	return lista
