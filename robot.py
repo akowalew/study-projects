@@ -157,7 +157,7 @@ def robotFunction() :
 						sleep(0.1)	
 					sound.beep()					
 						
-					sleep(3)
+					sleep(2.5)
 					stopMotors() 
 					rotateRobotSym(-120, True)
 					
@@ -175,12 +175,13 @@ def robotFunction() :
 					sound.beep()
 					
 					stopMotors()
-
+					sleep(2.5)
+					rotateRobotSym(-120, True)
+					lmotor.run_forever(speed_sp = 100)
+					rmotor.run_forever(speed_sp = 100)
+					
+					while getRsensor() >= rMaxBlack or getLsensor() >= lMaxBlack :						continue
 						
-					while True:
-						if isButtonPressed() == True:
-							if isRunning == True:
-								return
 				
 				sleep(0.001)
 				
