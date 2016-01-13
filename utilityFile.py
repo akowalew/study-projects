@@ -53,11 +53,11 @@ def calibrateSensors() :
 	rWhite = -100
 
 	#procentowa dokladnosc
-	eps = 0.75
+	eps = 0.70
 
 	#graniczne wartosci
-	lMaxBlack = 0
-	rMaxBlack = 0
+	#lMaxBlack = getLsensor()
+	rMaxBlack = getRsensor()
 	
 	rotateRobotSym(90)
 	while 'running' in lmotor.state:
