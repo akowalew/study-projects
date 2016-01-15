@@ -25,9 +25,9 @@ def obroc_sonar(pozycja) :
 def isButtonPressed():
 	return touch.value() == 1
 
-def rotateRobotSym(value, haveToWait):
-	lmotor.run_to_rel_pos(position_sp = value, speed_sp = 100)
-	rmotor.run_to_rel_pos(position_sp = -value, speed_sp = 100)
+def rotateRobotSym(value, haveToWait, itsSpeed):
+	lmotor.run_to_rel_pos(position_sp = value, speed_sp = itsSpeed)
+	rmotor.run_to_rel_pos(position_sp = -value, speed_sp = itsSpeed)
 	
 	if not haveToWait :
 		return
@@ -47,12 +47,12 @@ def getSonar():
 def stopMotors() :
 	while 'running' in lmotor.state or 'running' in rmotor.state :
 		if lmotor.speed > 50 :
-			lmotor.run_forever(speed_sp = lmotor.speed - 100)
+			lmotor.run_forever(speed_sp = lmotor.speed - 200)
 		else :
 			lmotor.stop()
 			
 		if rmotor.speed > 50 :
-			rmotor.run_forever(speed_sp = rmotor.speed - 100)
+			rmotor.run_forever(speed_sp = rmotor.speed - 200)
 		else :
 			rmotor.stop()
 			
@@ -76,7 +76,7 @@ def calibrateSensors() :
 	#lMaxBlack = getLsensor()
 	rMaxBlack = getRsensor()
 	
-	rotateRobotSym(90, False)
+	rotateRobotSym(90, False, 150)
 	while 'running' in lmotor.state:
 		ltmp = getLsensor()
 		rtmp = getRsensor()
@@ -89,7 +89,7 @@ def calibrateSensors() :
 		if rtmp<rBlack:
 			rBlack = rtmp
 	
-	rotateRobotSym(-180, False)
+	rotateRobotSym(-180, False, 150)
 	while 'running' in lmotor.state:
 		ltmp = getLsensor()
 		rtmp = getRsensor()
@@ -109,7 +109,7 @@ def calibrateSensors() :
 	
 	print str(lBlack) + " " + str(lWhite) + " " + str(rBlack) + " " + str(rWhite) + " max " + str(lMaxBlack) + " " + str(rMaxBlack)
 	
-	rotateRobotSym(90, True)
+	rotateRobotSym(90, True, 150)
 	sleep(1.0)
 
 	lista = [lBlack, lMaxBlack, lWhite, rBlack, rMaxBlack, rWhite]
