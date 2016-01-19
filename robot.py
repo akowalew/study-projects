@@ -78,8 +78,8 @@ def robotFunction() :
 				lastErrorR = rerror
 				
 				#				1.25
-				lcontrol = int((2.25 * lerror + 1.25 * lintegral + 2 * lderivative))
-				rcontrol = int((2.25 * rerror + 1.25 * rintegral + 2 * rderivative))
+				lcontrol = int((2.4 * lerror + 1 * lintegral + 2.5 * lderivative))
+				rcontrol = int((2.4 * rerror + 1 * rintegral + 2.5 * rderivative))
 				
 				if lval >= lMaxBlack+1  and rval >= rMaxBlack+1 :
 					
