@@ -78,32 +78,32 @@ def robotFunction() :
 				lastErrorR = rerror
 				
 				#				1.25
-				lcontrol = int((2.4 * lerror + 1 * lintegral + 2.5 * lderivative))
-				rcontrol = int((2.4 * rerror + 1 * rintegral + 2.5 * rderivative))
+				lcontrol = int((2.7 * lerror + 1 * lintegral + 2.5 * lderivative))
+				rcontrol = int((2.7 * rerror + 1 * rintegral + 2.5 * rderivative))
 				
 				if lval >= lMaxBlack+1  and rval >= rMaxBlack+1 :
 					
 					if ostatniSkret == "R" :
 						lmotor.run_forever(speed_sp = 400)
-						rmotor.run_forever(speed_sp = 0)
+						rmotor.run_forever(speed_sp = -20)
 						
 						if manualSteer == False :
 							start = lmotor.position 
 							
-						if abs(lmotor.position - start) > 250 :
+						if abs(lmotor.position - start) > 270 :
 							while getLsensor() >= lMaxBlack  and getRsensor() >= rMaxBlack:
 								lmotor.run_forever(speed_sp = -400)
 								rmotor.run_forever(speed_sp = 200)
 
 					else :
-						lmotor.run_forever(speed_sp = 0)
+						lmotor.run_forever(speed_sp = -20)
 						rmotor.run_forever(speed_sp = 400 )
-						#print str(rmotor.position) + " r"
+						
 						
 						if manualSteer == False :
 							start = rmotor.position 
 						
-						if abs(rmotor.position - start) > 250 :
+						if abs(rmotor.position - start) > 270 :
 							while getLsensor() >= lMaxBlack  and getRsensor() >= rMaxBlack:
 								lmotor.run_forever(speed_sp = 200)
 								rmotor.run_forever(speed_sp = -400)
@@ -115,7 +115,7 @@ def robotFunction() :
 						
 					predkosc = 500 + int((-2) * (abs(rcontrol - lcontrol)))
 					
-					print str(predkosc) + " : " + str(rcontrol) + " , " + str(lcontrol)
+					#print str(predkosc) + " : " + str(rcontrol) + " , " + str(lcontrol)
 					
 					lmotor.run_forever(speed_sp = predkosc + (rcontrol-lcontrol)/2)
 					rmotor.run_forever(speed_sp = predkosc + (lcontrol-rcontrol)/2)
@@ -134,7 +134,7 @@ def robotFunction() :
 							ostatniSkret = "L"
 				
 								#PRZESZKODA
-				if False :#sonar.value() < 11 :
+				if sonar.value() < 11 :
 					if isButtonPressed() == True:
 						if isRunning == True:
 							return
@@ -156,9 +156,10 @@ def robotFunction() :
 						sleep(0.1)	
 					sound.beep()					
 						
-					sleep(0.3)
+					sleep(0.5)
 					stopMotors() 
 					rotateRobotSym(-90, True, 200)
+					sleep(0.1)
 					
 					wskazanie = sonar.value()
 					print "Drugie " + str(wskazanie)
@@ -169,11 +170,11 @@ def robotFunction() :
 						sleep(0.1)
 					sound.beep()
 						
-					while( sonar.value() <= wskazanie*0.8) :
+					while( sonar.value() <= wskazanie*0.5) :
 						sleep(0.1)
 					sound.beep()
 					
-					sleep(0.3)
+					sleep(0.2)
 					
 					stopMotors()
 					

@@ -47,12 +47,12 @@ def getSonar():
 def stopMotors() :
 	while 'running' in lmotor.state or 'running' in rmotor.state :
 		if lmotor.speed > 50 :
-			lmotor.run_forever(speed_sp = lmotor.speed - 200)
+			lmotor.run_forever(speed_sp = lmotor.speed - 300)
 		else :
 			lmotor.stop()
 			
 		if rmotor.speed > 50 :
-			rmotor.run_forever(speed_sp = rmotor.speed - 200)
+			rmotor.run_forever(speed_sp = rmotor.speed - 300)
 		else :
 			rmotor.stop()
 			
