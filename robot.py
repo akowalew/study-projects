@@ -77,9 +77,9 @@ def robotFunction() :
 				lastErrorL = lerror
 				lastErrorR = rerror
 				
-				#0.25
-				lcontrol = int((2 * lerror + 1.25 * lintegral + 0.75 * lderivative))
-				rcontrol = int((2 * rerror + 1.25 * rintegral + 0.75 * rderivative))
+				#				1.25
+				lcontrol = int((2.25 * lerror + 1.25 * lintegral + 2 * lderivative))
+				rcontrol = int((2.25 * rerror + 1.25 * rintegral + 2 * rderivative))
 				
 				if lval >= lMaxBlack+1  and rval >= rMaxBlack+1 :
 					
@@ -113,7 +113,7 @@ def robotFunction() :
 					
 					# y = (-1) * x + 500
 						
-					predkosc = 500 + int((-1.5) * (abs(rcontrol - lcontrol)))
+					predkosc = 500 + int((-2) * (abs(rcontrol - lcontrol)))
 					
 					print str(predkosc) + " : " + str(rcontrol) + " , " + str(lcontrol)
 					
