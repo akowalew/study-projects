@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
 from time import sleep
+import time
+
 from ev3dev import *	
 from utilityFile import *
 import timeit	
@@ -33,13 +35,15 @@ def robotFunction() :
 	
 	start = 0
 
+	czas = 0 
+	odliczanie = False
+
 	while True:
 	
 		lval = getLsensor()
 		rval = getRsensor()
 		sval = getSonar()
 		
-	
 		if isButtonPressed() == True:
 			if isRunning == True:
 				return
@@ -72,18 +76,17 @@ def robotFunction() :
 
 				lastErrorL = lerror
 				lastErrorR = rerror
-				#0.25
-				lcontrol = int((4 * lerror + 0.5 * lintegral + 0.5 * lderivative))
-				rcontrol = int((5 * rerror + 0.5 * rintegral + 0.5 * rderivative))
 				
-				if lval >= lMaxBlack+1  and rval >= rMaxBlack+1  :
-					
-					#sound.beep()
+				#0.25
+				lcontrol = int((2 * lerror + 1.25 * lintegral + 0.75 * lderivative))
+				rcontrol = int((2 * rerror + 1.25 * rintegral + 0.75 * rderivative))
+				
+				if lval >= lMaxBlack+1  and rval >= rMaxBlack+1 :
 					
 					if ostatniSkret == "R" :
-						lmotor.run_forever(speed_sp = 300)
-						rmotor.run_forever(speed_sp = -100)
-						#print str(lmotor.position) + " l"
+						lmotor.run_forever(speed_sp = 400)
+						rmotor.run_forever(speed_sp = 0)
+						
 						if manualSteer == False :
 							start = lmotor.position 
 							
@@ -93,8 +96,8 @@ def robotFunction() :
 								rmotor.run_forever(speed_sp = 200)
 
 					else :
-						lmotor.run_forever(speed_sp = -50)
-						rmotor.run_forever(speed_sp = 300 )
+						lmotor.run_forever(speed_sp = 0)
+						rmotor.run_forever(speed_sp = 400 )
 						#print str(rmotor.position) + " r"
 						
 						if manualSteer == False :
@@ -104,22 +107,18 @@ def robotFunction() :
 							while getLsensor() >= lMaxBlack  and getRsensor() >= rMaxBlack:
 								lmotor.run_forever(speed_sp = 200)
 								rmotor.run_forever(speed_sp = -400)
-					
 					manualSteer = True
-					
 				else :
-					
 					predkosc = 0
 					
-					if abs(lcontrol-rcontrol) <= 15 :
-						predkosc = 400 
-					elif abs(lcontrol-rcontrol) <= 60 :
-						predkosc = 300 				
-					else :
-						predkosc = 250
+					# y = (-1) * x + 500
 						
-					lmotor.run_forever(speed_sp = predkosc + rcontrol)
-					rmotor.run_forever(speed_sp = predkosc + lcontrol)
+					predkosc = 500 + int((-1.5) * (abs(rcontrol - lcontrol)))
+					
+					print str(predkosc) + " : " + str(rcontrol) + " , " + str(lcontrol)
+					
+					lmotor.run_forever(speed_sp = predkosc + (rcontrol-lcontrol)/2)
+					rmotor.run_forever(speed_sp = predkosc + (lcontrol-rcontrol)/2)
 					
 					if manualSteer == True :
 						if ostatniSkret == "R" :
@@ -135,7 +134,7 @@ def robotFunction() :
 							ostatniSkret = "L"
 				
 								#PRZESZKODA
-				if sonar.value() < 11 :
+				if False :#sonar.value() < 11 :
 					if isButtonPressed() == True:
 						if isRunning == True:
 							return

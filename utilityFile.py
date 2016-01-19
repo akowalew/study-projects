@@ -1,7 +1,7 @@
 from time import sleep
 from ev3dev import *
 
-#inicjacja motorow
+#inicjacja motorowsds
 lmotor = large_motor(OUTPUT_D) ; assert lmotor.connected
 rmotor = large_motor(OUTPUT_B) ; assert rmotor.connected
 mmotor = medium_motor(OUTPUT_C) ; assert mmotor.connected
@@ -70,7 +70,8 @@ def calibrateSensors() :
 	rWhite = -100
 
 	#procentowa dokladnosc
-	eps = 0.70
+	eps = 0.75
+
 
 	#graniczne wartosci
 	#lMaxBlack = getLsensor()
@@ -109,9 +110,8 @@ def calibrateSensors() :
 	
 	print str(lBlack) + " " + str(lWhite) + " " + str(rBlack) + " " + str(rWhite) + " max " + str(lMaxBlack) + " " + str(rMaxBlack)
 	
-	rotateRobotSym(90, True, 150)
-	sleep(1.0)
+	rotateRobotSym(85, True, 150)
+	sleep(0.5)
 
 	lista = [lBlack, lMaxBlack, lWhite, rBlack, rMaxBlack, rWhite]
-	sound.speak("Show me your dick", True)
 	return lista
