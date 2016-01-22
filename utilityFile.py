@@ -33,7 +33,7 @@ def rotateRobotSym(value, haveToWait, itsSpeed):
 		return
 		
 	while 'running' in lmotor.state or 'running' in rmotor.state :
-		sleep(0.1)
+		sleep(0.01)
 		
 def getRsensor() :
 	return rsensor.value()

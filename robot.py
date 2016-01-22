@@ -37,7 +37,6 @@ def robotFunction() :
 
 	czas = 0 
 	odliczanie = False
-
 	while True:
 	
 		lval = getLsensor()
@@ -63,6 +62,8 @@ def robotFunction() :
 				
 				isCalibrated = True
 				manualSteer = False
+				
+				
 			else :		
 				
 				lerror = lMaxBlack - lval
@@ -78,13 +79,13 @@ def robotFunction() :
 				lastErrorR = rerror
 				
 				#				1.25
-				lcontrol = int((2.7 * lerror + 1 * lintegral + 2.5 * lderivative))
-				rcontrol = int((2.7 * rerror + 1 * rintegral + 2.5 * rderivative))
+				lcontrol = int((2.6 * lerror + 1 * lintegral + 2.5 * lderivative))
+				rcontrol = int((2.6 * rerror + 1 * rintegral + 2.5 * rderivative))
 				
 				if lval >= lMaxBlack+1  and rval >= rMaxBlack+1 :
 					
 					if ostatniSkret == "R" :
-						lmotor.run_forever(speed_sp = 400)
+						lmotor.run_forever(speed_sp = 450)
 						rmotor.run_forever(speed_sp = -20)
 						
 						if manualSteer == False :
@@ -97,7 +98,7 @@ def robotFunction() :
 
 					else :
 						lmotor.run_forever(speed_sp = -20)
-						rmotor.run_forever(speed_sp = 400 )
+						rmotor.run_forever(speed_sp = 450 )
 						
 						
 						if manualSteer == False :
@@ -113,7 +114,7 @@ def robotFunction() :
 					
 					# y = (-1) * x + 500
 						
-					predkosc = 500 + int((-2) * (abs(rcontrol - lcontrol)))
+					predkosc = 500 + int((-1) * (abs(rcontrol - lcontrol)))
 					
 					#print str(predkosc) + " : " + str(rcontrol) + " , " + str(lcontrol)
 					
@@ -142,46 +143,63 @@ def robotFunction() :
 					stopMotors()
 					
 					obroc_sonar(90)
-					sleep(0.1)
+					sleep(0.3)
 					
 					rotateRobotSym(90, True, 200)
-					sleep(0.1)
+					sleep(0.3) #
 					
 					wskazanie = sonar.value()
 					print "Pierwsze " + str(wskazanie)
 					
-					lmotor.run_forever(speed_sp = 400)
-					rmotor.run_forever(speed_sp = 400)
+					lmotor.run_forever(speed_sp = 500)
+					rmotor.run_forever(speed_sp = 500)
 					while( sonar.value() < 1.3 * wskazanie):
-						sleep(0.1)	
+						continue	
 					sound.beep()					
 						
-					sleep(0.5)
-					stopMotors() 
-					rotateRobotSym(-90, True, 200)
+					
+					
+					#stopMotors() 
+					#rotateRobotSym(-90, True, 200)
+					
+					sleep(0.08)
+					
+					lmotor.run_to_rel_pos(position_sp = 25, speed_sp = 400)
+					rmotor.run_to_rel_pos(position_sp = 280, speed_sp = 400)
+					
+					while 'running' in lmotor.state or 'running' in rmotor.state :
+						sleep(0.01)
+					
 					sleep(0.1)
+					
 					
 					wskazanie = sonar.value()
 					print "Drugie " + str(wskazanie)
-					lmotor.run_forever(speed_sp = 400)
-					rmotor.run_forever(speed_sp = 400)
+					lmotor.run_forever(speed_sp = 550)
+					rmotor.run_forever(speed_sp = 550)
 					
-					while( sonar.value() > 0.3 * wskazanie) :
-						sleep(0.1)
+					while( sonar.value() > 0.6 * wskazanie) :
+						continue
 					sound.beep()
 						
-					while( sonar.value() <= wskazanie*0.5) :
-						sleep(0.1)
-					sound.beep()
+					while( sonar.value() <= wskazanie*0.7) :
+						continue
+					sound.beep()	
 					
-					sleep(0.2)
+														
 					
-					stopMotors()
+					lmotor.run_to_rel_pos(position_sp = 25, speed_sp = 400)
+					rmotor.run_to_rel_pos(position_sp = 250, speed_sp = 400)
 					
-					rotateRobotSym(-60, True, 200)
-					lmotor.run_forever(speed_sp = 400)
-					rmotor.run_forever(speed_sp = 400)
+					while 'running' in lmotor.state or 'running' in rmotor.state :
+						sleep(0.01)
+					
 					obroc_sonar(-90)
+					sleep(0.1)
+					
+					lmotor.run_forever(speed_sp = 500)
+					rmotor.run_forever(speed_sp = 500)
+					
 					while getRsensor() >= rMaxBlack or getLsensor() >= lMaxBlack :
 						continue
 				
