@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 from time import sleep
 import time
 
@@ -7,81 +5,64 @@ from ev3dev import *
 from utilityFile import *
 import timeit	
 
-def getRstate(rval, rMaxBlack) :
-	if rval > rMaxBlack :
-		return "w" 
-	else :
-		return "b"
-		
-def getLstate(lval, lMaxBlack) :
-	if lval > lMaxBlack :
-		return "w" 
-	else :
-		return "b"
-		
-	
+#Główna funkcja sterująca robotem
 def robotFunction() :
 	
+	#Inicjalizacja początkowych zmiennych
 	lintegral = rintegral = lastErrorR = lastErrorL	= 0
-	isRunning = False
+	isRunning = False 
 	isCalibrated = False
-
-	i = 0 
-	j = 0
 	ostatniSkret = "L"
-	
-	ltab = [ "", "", ""]
-	rtab = [ "", "", ""]
-	
 	start = 0
-
-	czas = 0 
-	odliczanie = False
-	while True:
 	
+	#Główna pętla sterowania robotem
+	while True:
+		#Pobranie obecnych wartości wszyskich sensorów
 		lval = getLsensor()
 		rval = getRsensor()
 		sval = getSonar()
 		
+		#Wykrywanie wciśniętego przycisku, rozpoczyna lub kończy jazdę
 		if isButtonPressed() == True:
 			if isRunning == True:
 				return
 			if isRunning == False:
 				isRunning = True
 				sleep(0.5)
+		
+		
 		if isRunning == True:
+			#Kalibruje czujniki o ile nie zostały już skalibrowane
 			if isCalibrated == False:
-			
-				parametry = calibrateSensors() 
-				lBlack = parametry[0]
-				lMaxBlack = parametry[1]
-				lWhite = parametry[2]
-				rBlack = parametry[3]
-				rMaxBlack = parametry[4]
-				rWhite = parametry[5]	
-				
+				parametry = calibrateSensors()
+				lMaxBlack = parametry[0]
+				rMaxBlack = parametry[1]
 				isCalibrated = True
 				manualSteer = False
-				
-				
 			else :		
 				
+				#Obliczanie uchybu
 				lerror = lMaxBlack - lval
 				rerror = rMaxBlack - rval
-
+				
+				#Obliczanie całki
 				lintegral = 0.5 * lintegral + lerror
 				rintegral = 0.5 * rintegral + rerror
-
+				
+				#Obliczanie pochodnej
 				lderivative = lerror - lastErrorL 
 				rderivative = rerror - lastErrorR
-
+				
+				#Zapisanie poprzedniego uchybu
 				lastErrorL = lerror
 				lastErrorR = rerror
 				
-				#				1.25
+				#Obliczenie sterowania dla każdego z silników
 				lcontrol = int((2.6 * lerror + 1 * lintegral + 2.5 * lderivative))
 				rcontrol = int((2.6 * rerror + 1 * rintegral + 2.5 * rderivative))
 				
+				#Manualne sterowanie - jeżli robot wyjedzie za
+				#linię to skręca mocno w stronę ostatniego zakrętu
 				if lval >= lMaxBlack+1  and rval >= rMaxBlack+1 :
 					
 					if ostatniSkret == "R" :
@@ -100,7 +81,6 @@ def robotFunction() :
 						lmotor.run_forever(speed_sp = -20)
 						rmotor.run_forever(speed_sp = 450 )
 						
-						
 						if manualSteer == False :
 							start = rmotor.position 
 						
@@ -109,107 +89,94 @@ def robotFunction() :
 								lmotor.run_forever(speed_sp = 200)
 								rmotor.run_forever(speed_sp = -400)
 					manualSteer = True
-				else :
-					predkosc = 0
 					
-					# y = (-1) * x + 500
-						
+				else :
+					#Ustalenie prędkości bazowej - im mniejsza różnica
+					#sterowania tym proporcjonalnie wyższa prędkość
 					predkosc = 500 + int((-1) * (abs(rcontrol - lcontrol)))
 					
-					#print str(predkosc) + " : " + str(rcontrol) + " , " + str(lcontrol)
-					
+					#Wysterowanie poszczególnych silników
 					lmotor.run_forever(speed_sp = predkosc + (rcontrol-lcontrol)/2)
 					rmotor.run_forever(speed_sp = predkosc + (lcontrol-rcontrol)/2)
 					
+					#Wyłączenie manualnego sterowania
 					if manualSteer == True :
 						if ostatniSkret == "R" :
 							ostatniSkret = "L" 
 						else :
 							ostatniSkret = "R"
-							
 						manualSteer = False
+					#Zapisanie ostatniego zakrętu
 					else :
 						if rcontrol > lcontrol:
 							ostatniSkret = "R"
 						else :
 							ostatniSkret = "L"
 				
-								#PRZESZKODA
+				#Agorytm omijania przeszkodzy
 				if sonar.value() < 11 :
-					if isButtonPressed() == True:
-						if isRunning == True:
-							return
-					
+					#Zatrzymanie się
 					stopMotors()
 					
+					#Obrócenie sonaru w kierunku przeszkody
 					obroc_sonar(90)
 					sleep(0.3)
 					
+					#Obrócenie robota o 90 stopni
 					rotateRobotSym(90, True, 200)
-					sleep(0.3) #
+					sleep(0.3) 
 					
+					#Pobranie pierwszego wskazania sonaru
 					wskazanie = sonar.value()
-					print "Pierwsze " + str(wskazanie)
 					
+					#Jazda w poprzek przeszkody
 					lmotor.run_forever(speed_sp = 500)
 					rmotor.run_forever(speed_sp = 500)
 					while( sonar.value() < 1.3 * wskazanie):
 						continue	
-					sound.beep()					
-						
-					
-					
-					#stopMotors() 
-					#rotateRobotSym(-90, True, 200)
-					
+					sound.beep()
 					sleep(0.08)
 					
+					#Obrócenie robota, tak aby ustawił się równolegle do przeszkody
 					lmotor.run_to_rel_pos(position_sp = 25, speed_sp = 400)
 					rmotor.run_to_rel_pos(position_sp = 280, speed_sp = 400)
-					
 					while 'running' in lmotor.state or 'running' in rmotor.state :
 						sleep(0.01)
-					
 					sleep(0.1)
 					
-					
+					#Pobranie drugiego wskazania sonaru
 					wskazanie = sonar.value()
-					print "Drugie " + str(wskazanie)
+					
+					#Jazda wzdłuż przeszkody
 					lmotor.run_forever(speed_sp = 550)
 					rmotor.run_forever(speed_sp = 550)
 					
+					#Wykrycie początkowej krawędzi przezkody
 					while( sonar.value() > 0.6 * wskazanie) :
 						continue
-					sound.beep()
-						
+					
+					#Wykrycie końca przeszkody
 					while( sonar.value() <= wskazanie*0.7) :
 						continue
-					sound.beep()	
 					
-														
-					
+					#Obrócenie robota aby wrócił na linię
 					lmotor.run_to_rel_pos(position_sp = 25, speed_sp = 400)
 					rmotor.run_to_rel_pos(position_sp = 250, speed_sp = 400)
-					
 					while 'running' in lmotor.state or 'running' in rmotor.state :
 						sleep(0.01)
 					
+					#Powrót sonaru do pozycji początkowej
 					obroc_sonar(-90)
 					sleep(0.1)
 					
+					#Jazda aż do wykrycia linii
 					lmotor.run_forever(speed_sp = 500)
 					rmotor.run_forever(speed_sp = 500)
-					
 					while getRsensor() >= rMaxBlack or getLsensor() >= lMaxBlack :
 						continue
 				
+				#Częstotliwość próbkowania
 				sleep(0.001)
 				
-# main Loop				
+# Wywołanie głównej funkcji sterującej				
 robotFunction()
-
-#unlock motors
-obroc_sonar(0)
-lmotor.set(stop_command='coast')
-rmotor.set(stop_command='coast')
-mmotor.set(stop_command='coast')
