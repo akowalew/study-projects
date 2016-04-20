@@ -38,6 +38,8 @@ HEX_IN			.set		P3IN
 LICZNIK		.byte	0x00
 FLAGI		.byte 	0x00
 
+TAB_JOHNSON	.byte	0x00, 0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF, 0xFE, 0xFC, 0xF8, 0xF0, 0xE0, 0xC0, 0x80
+
 ;-------------------------------------------------------------------------------
 ;	Program Constants
 ;-------------------------------------------------------------------------------
@@ -110,7 +112,7 @@ INC_INT_FLAG_NOT_SET
 			;--------------------
 			; GO SLEEEEEEP!!!
 			;--------------------
-
+			bis		#CPUOFF|SCG1|SCG0|OSCOFF, SR
 
 			jmp MainLoop
 
@@ -144,7 +146,7 @@ LOAD_INVERT_EDGE
 NOT_LOAD_INT_FLAG
 
 			bit.b	#BTN_INC, &P1IFG		; IS INC_BTN INT FLAG?
-			jnz		NOT_INC_INT_FLAG		; branch if not
+			jz		NOT_INC_INT_FLAG		; branch if not
 
 			bic.b	#BTN_INC, &P1IE			; Disable INC_BTN interrupt
 			bit.b	#BTN_INC, &P1IES		; Is High to Low transition ?
@@ -161,7 +163,7 @@ CANCEL_SLEEP
 			; ------------------------
 			; DO SOMETHING TO CANCEL SLEEP
 			; ------------------------
-
+			bic		#CPUOFF|SCG1|SCG0|OSCOFF, 0(SP)
 			reti
 
 ;-------------------------------------------------------------------------------
@@ -174,7 +176,7 @@ BtnLoadChanged
 			jz		LOAD_NOT_RELEASED		; If not, branch
 
 			bic.b	#LOAD_PRESSED|LOAD_RELEASED|INC_PRESSED, FLAGI	; If it is released, Clear the flags
-			bic.b	#BTN_INC, &P1IFG		; Clear also INC_BTN flag
+			;bic.b	#BTN_INC, &P1IFG		; Clear also INC_BTN flag
 LOAD_NOT_RELEASED
 			bic.b	#BTN_LOAD, &P1IFG		; Before we re-enable interrupts on BTN_LOAD, we've to clear interrupt flag
 			bis.b	#BTN_LOAD, &P1IE		; Enable interrupt on BTN_LOAD
@@ -202,16 +204,33 @@ INC_NOT_PRESSED
 ;	LOAD procedure
 ;-------------------------------------------------------------------------------
 LOAD
-			mov.b	#0x00, LICZNIK
-			mov.b	LICZNIK, &P2OUT
+			push R4
+			push R5
+
+			mov.b	&P3IN, R4
+			and.b	#0x0F, R4
+
+			mov.w	#TAB_JOHNSON, R5
+			add.w	R4, R5
+
+			mov.b	@R5, &LICZNIK
+
+			mov.b	LICZNIK, &SEG7_OUT
+
+			pop R5
+			pop R4
 			ret
 
 ;-------------------------------------------------------------------------------
 ;	INCREMENT procedure
 ;-------------------------------------------------------------------------------
 INCREMENT
-			inc.b	LICZNIK
+			rla.b	LICZNIK
+			addc.b	#0x00, LICZNIK
+			xor.b	#0x01, LICZNIK
+
 			mov.b	LICZNIK, &P2OUT
+
 			ret
 
 ;-------------------------------------------------------------------------------
@@ -219,7 +238,7 @@ INCREMENT
 ;-------------------------------------------------------------------------------
 DEBOUNCE
 			push R4
-			mov.w		#0x8000, R4
+			mov.w		#0x3415, R4
 DEB_DEC		dec.w		R4
 			jnz 		DEB_DEC
 			pop 		R4
@@ -239,3 +258,4 @@ DEB_DEC		dec.w		R4
             .short  RESET
             .sect	".int04"
             .short	INT_PORT1
+
