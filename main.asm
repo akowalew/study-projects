@@ -15,29 +15,68 @@
                           					; Assemble into program memory.
 
 ;-------------------------------------------------------------------------------
+
+
+;---------------------------------
+; Port mnemonics Constants
+;---------------------------------
+BTN_DIR			.set		P1DIR
+BTN_IFG			.set		P1IFG
+BTN_IE			.set		P1IE
+BTN_IES			.set		P1IES
+
+SEG7_DIR		.set		P2DIR
+SEG7_OUT		.set		P2OUT
+
+HEX_DIR			.set		P3DIR
+HEX_IN			.set		P3IN
+
+;-------------------------------------------------------------------------------
+;	Variables
+;-------------------------------------------------------------------------------
+			.data
+LICZNIK		.byte	0x00
+FLAGI		.byte 	0x00
+
+;-------------------------------------------------------------------------------
+;	Program Constants
+;-------------------------------------------------------------------------------
+BTN_LOAD		.set	0x01
+BTN_INC			.set	0x80
+
+LOAD_PRESSED	.set	0x01
+INC_PRESSED		.set	0x02
+LOAD_RELEASED	.set	0x04
+INC_RELEASED	.set	0x08
+
+;-------------------------------------------------------------------------------
+; RESET INTERRUPT VECTOR
+;-------------------------------------------------------------------------------
+
 RESET       mov.w   #__STACK_END,	SP       ; Initialize stackpointer
 StopWDT     mov.w   #WDTPW|WDTHOLD,	&WDTCTL  ; Stop watchdog timer
 
-;----------------
-; Konfiguracja portow
-;----------------
+			;----------------
+			; Configure ports
+			;----------------
+
 			bic.b	#BTN_LOAD|BTN_INC, 	&P1DIR	;	Port1 jako WEJSCIE. PRZYCISKI
 			mov.b	#0xFF, 	&P2DIR				;	Port2 jako wejscie. WYSWIETLACZ
 			mov.b	#0x00, 	&P3DIR				;	Port3 jako wejcie. HEX_IN
 
-;----------------
-; Konfiguracja przerwania przycisku1, INKREMENTACJA, przycisku 8 LADOWANIE
-;----------------
+			;----------------
+			; Configure interrupts
+			;----------------
 			bis.b	#BTN_LOAD|BTN_INC, 	&P1IES	;	Przycisk1, HIGH -> LOW
 			bis.b	#BTN_LOAD|BTN_INC, 	&P1IE	;	Przycisk1, Interrupt Enable
-			eint								; 	Global Enable Interrupts
 
-;----------------
-; Konfiguracja zmiennych
-;----------------
+			;----------------
+			; Configure variables
+			;----------------
 			mov.b	#0x00, LICZNIK
 			mov.b	#0x00, FLAGI
 
+			eint								; 	Global Enable Interrupts
 			jmp MainLoop
 
 ;-------------------------------------------------------------------------------
@@ -45,66 +84,119 @@ StopWDT     mov.w   #WDTPW|WDTHOLD,	&WDTCTL  ; Stop watchdog timer
 ;-------------------------------------------------------------------------------
 MainLoop
 
-			bit.b	#BTN_LOAD, FLAGI ;  CZY PRZYCISK LOAD ZOSTAL NACISNIETY?
-			jz		NOT_LOAD
+			bit.b	#BTN_LOAD, &P1IFG		; Is LOAD_BTN interrupt flag set ?
+			jz		LOAD_INT_FLAG_NOT_SET	; if not, branch
 
-			bic.b	#BTN_INC, &P1IE
-			call	#DEBOUNCE
-LADUJ		call 	#LOAD
+			call 	#BtnLoadChanged			; BtnLoad is changed, we have to check it
 
-			bit.b	#BTN_LOAD, &P1IN 	; CZY PRZYCISK LOAD DALEJ JEST NACISNIETY?
-			jz 		LADUJ				; JESLI DALEJ NACISNIETY, TO LADUJ
+LOAD_INT_FLAG_NOT_SET
+			bit.b	#LOAD_PRESSED, FLAGI	; Is LOAD_BTN pressed ?
+			jz		LOAD_NOT_PRESSED 		; If not, branch
 
-			call 	#DEBOUNCE
+			call	#LOAD					; Execute asynchronic LOAD function
 
-			; KASOWANIE FLAG, ITD...
-			bic.b	#BTN_LOAD, FLAGI 	; SKASUJ FLAGE LOAD
-			bic.b	#BTN_LOAD, &P1IFG	; SKASUJ INT FLAGE PRZYCISKU LOAD
-			bis.b	#BTN_LOAD, &P1IE	; URUCHOM PONOWNIE PRZERWANIE LOAD
+			jmp 	MainLoop				; We have to don't care about INC_BTN if LOAD_BTN is pressed
 
-			jmp 	MainLoop
+LOAD_NOT_PRESSED
+			bit.b	#BTN_INC, &P1IFG		; Is 	BTN_INC interrupt flag set?
+			jz		INC_INT_FLAG_NOT_SET	; if not, branch
 
-NOT_LOAD
-			bit.b	#BTN_INC, FLAGI ; 	CZY PRZYCISK INCREMENT ZOSTAL NACISNIETY?
-			jz		NOT_INC
+			call	#BtnIncChanged
 
-			call	#DEBOUNCE
-ZWIEKSZ		call 	#INCREMENT
+			jmp 	MainLoop				; we have to check one more time the whole loop
+
+INC_INT_FLAG_NOT_SET
+
+			;--------------------
+			; GO SLEEEEEEP!!!
+			;--------------------
 
 
-
-			; KASOWANIE FLAG, ITD...
-			bic.b	#BTN_INC, FLAGI	; SKASUJ FLAGE INCREMENT
-			bic.b	#BTN_INC, &P1IFG
-			bis.b	#BTN_INC, &P1IE	; URUCHOM PRZERWANIE INCREMENT
-
-NOT_INC
-			bis.b	#BTN_INC, &P1IE
 			jmp MainLoop
 
 ;-------------------------------------------------------------------------------
 ;	INT_PORT1 Interrupt Routine
 ;-------------------------------------------------------------------------------
 INT_PORT1
-			bic.b	#BTN_LOAD|BTN_INC, &P1IFG	; KASUJ FLAGI PRZERWANIA PORTU1, BTN1 | BTN2
+	;----------------
+	; Check LOAD_BTN
+	;----------------
+			bit.b	#BTN_LOAD, &P1IFG		; Is LOAD_BTN interrupt flag set?
+			jz		NOT_LOAD_INT_FLAG		; branch if not
 
+			bic.b	#BTN_LOAD, &P1IE		; DISABLE LOAD INT
+			bit.b	#BTN_LOAD, &P1IES		; IS HIGH -> LOW transition ?
 
-			bit.b	#BTN_LOAD, &P1IN	; SPRAWDZ PRZYCISK1, LADOWANIE
+			jnz		LOAD_SET_PRESSED		; If it's true, we have a pressed button. Let's branch
 
-			jnz		NIE_BTN1		; JESLI NIE BYL WCISNIETY, TO WYSKOCZ
-			bis.b	#BTN_LOAD, FLAGI	; USTAW FLAGE LOAD, BO BYL WCISNIETY
-			bic.b	#BTN_LOAD, &P1IE	; WYLACZ PRZERWANIE DLA TEGO PRZYCISKU
-			jmp 	NIE_BTN2
+			bis.b	#LOAD_RELEASED, FLAGI	; If not, we have a released button.
+			jmp 	LOAD_INVERT_EDGE		; branch to next step
+LOAD_SET_PRESSED
+			bis.b	#LOAD_PRESSED, FLAGI	; we have pushed button
 
-NIE_BTN1
-			bit.b	#BTN_INC, &P1IN	; sprawdz PRZYCISK2, INCREMENT
+LOAD_INVERT_EDGE
+			xor.b	#BTN_LOAD, &P1IES		; Invert type of Edge on LOAD_BTN
+			jmp 	CANCEL_SLEEP
 
-			jnz NIE_BTN2
-			bis.b	#BTN_INC, FLAGI	; USTAW FLAGE INCREMENT
-			bic.b	#BTN_INC, &P1IE	; WYLACZ PRZERWANIE DLA TEGO PRZYCISKU
+	;----------------
+	; Check INC_BTN
+	;----------------
+NOT_LOAD_INT_FLAG
 
-NIE_BTN2
+			bit.b	#BTN_INC, &P1IFG		; IS INC_BTN INT FLAG?
+			jnz		NOT_INC_INT_FLAG		; branch if not
+
+			bic.b	#BTN_INC, &P1IE			; Disable INC_BTN interrupt
+			bit.b	#BTN_INC, &P1IES		; Is High to Low transition ?
+
+			jz		INC_INVERT_EDGE			; if not, branch, because INC_BTN is not pressed
+			bis.b	#INC_PRESSED, FLAGI		; if it is true, Set the PRESSED flag on INC_BTN
+
+INC_INVERT_EDGE
+			xor.b	#BTN_INC, &P1IES		; Invert type of Edge on INC_BTN
+
+NOT_INC_INT_FLAG
+CANCEL_SLEEP
+
+			; ------------------------
+			; DO SOMETHING TO CANCEL SLEEP
+			; ------------------------
+
 			reti
+
+;-------------------------------------------------------------------------------
+;	BtnLoadChanged procedure
+;-------------------------------------------------------------------------------
+BtnLoadChanged
+			call 	#DEBOUNCE				; First, wait for debounce, because button state is changed
+
+			bit.b	#LOAD_RELEASED, FLAGI	; Is LOAD_BTN released?
+			jz		LOAD_NOT_RELEASED		; If not, branch
+
+			bic.b	#LOAD_PRESSED|LOAD_RELEASED|INC_PRESSED, FLAGI	; If it is released, Clear the flags
+			bic.b	#BTN_INC, &P1IFG		; Clear also INC_BTN flag
+LOAD_NOT_RELEASED
+			bic.b	#BTN_LOAD, &P1IFG		; Before we re-enable interrupts on BTN_LOAD, we've to clear interrupt flag
+			bis.b	#BTN_LOAD, &P1IE		; Enable interrupt on BTN_LOAD
+
+			ret
+
+;-------------------------------------------------------------------------------
+;	BtnIncChanged procedure
+;-------------------------------------------------------------------------------
+BtnIncChanged
+			call 	#DEBOUNCE				; wait for debounce, because button state is changed
+
+			bit.b	#INC_PRESSED, FLAGI		; Is INC_BTN pressed?
+			jz		INC_NOT_PRESSED			; if not, branch
+			; if it is true, execute code below:
+			call	#INCREMENT
+			bic.b	#INC_PRESSED, FLAGI		; Clear flag
+INC_NOT_PRESSED
+			bic.b	#BTN_INC, &P1IFG		; Clear interrupt Flag, before re-enable
+			bis.b	#BTN_INC, &P1IE			; Enable interrupt on this pin
+
+			ret
 
 ;-------------------------------------------------------------------------------
 ;	LOAD procedure
@@ -133,19 +225,6 @@ DEB_DEC		dec.w		R4
 			pop 		R4
 			ret
 
-;-------------------------------------------------------------------------------
-;	Variables
-;-------------------------------------------------------------------------------
-			.data
-LICZNIK		.byte	0xF0
-FLAGI		.byte 	0x00
-
-;-------------------------------------------------------------------------------
-;	Constants
-;-------------------------------------------------------------------------------
-BTN_LOAD	.set	0x01
-BTN_INC		.set	0x80
-
 
 ;-------------------------------------------------------------------------------
 ; Stack Pointer definition
@@ -160,4 +239,3 @@ BTN_INC		.set	0x80
             .short  RESET
             .sect	".int04"
             .short	INT_PORT1
-
