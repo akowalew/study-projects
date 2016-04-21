@@ -11,67 +11,92 @@ RESET:
 	; INICJUJ LICZNIK
 	LD A, 0xF0
 	LD (ZMIENNA), A
+	OUT (0x00), A ; wyswietl wynik na ledach
 	
 	; WYZERUJ ZNACZNIK PRZERWANIA
-	LD A, 0x00
+	XOR A
 	LD (ZMIENNA_INT), A
-	
-	CALL WYSWIETL_ZMIENNA
 	
 	EI
 	
 	;SKOCZ DO PETLI GLOWNEJ
 	JR LOOP
-	DS 0x1838-$, 0
+	DS 0x1838-$
 
+; procedura przerwania maskowalnego, asynchroniczne ladowanie
 INT_LADOWANIE:
-	PUSH AF
-	
-	; pobierz stan HEXa
+	; alternatywnie : PUSH AF
+	EX AF, AF'
+	EXX
+
+	; pobierz stan HEXa, wartosc w kodzie NKB
 	IN A, (00h)
 	
-	; zapisz do zmiennej
+	; tutaj trzeba to przerobic na kod johnsona	
+	; pierw przerabiamy wczytana wartosc z hexa na kod NKB 3bit
+	LD B, 0x07 ; maska trzech pierwszych bitow
+	AND B ; wyzeruj pozostale	
+	LD HL, WARTOSCI_JOHNSON ; zaladuj do HL adres poczatku tablicy
+	LD C, A ; wrzuc nasz kod przesuniecia do C
+	LD B, 0x00 ;  B wyzeruj
+	ADD HL, BC ; dodaj przesuniecie, wynik w HL
+
+	; obliczylismy miejsce w tablicy
+	; teraz ladujemy ta wartosc do zmiennej
+	LD A, (HL)
 	LD (ZMIENNA), A
-	
-	; USTAW ZNACZNIK
+
+	; wyswietl wynik na ledach	
+	OUT (0x00), A
+
+	; USTAW ZNACZNIK przebywania w przerwaniu
 	LD A, 0xFF
 	LD (ZMIENNA_INT), A
-	
-	OUT (0x00), A
-	
-	POP AF
+
+	; jeslibysmy uzyli PUSH, to teraz POP AF
+	EX AF, AF'
+	EXX
+
 	EI
 	RETI
 	
 LOOP:
 	; AKTYWNIE OCZEKUJEMY NA NACISNIECIE
-	
 	OCZEKIWANIE:
-		IN A, (00h)
-		BIT 4, A
-		JR NZ, OCZEKIWANIE
+		IN A, (00h) ;pobierz stan hexa
+		BIT 4, A ; sprawdz, czy nacisnieto przycisk
+		JR NZ, OCZEKIWANIE ;jesli nie nacisnieto, to sprawdz ponownie
 
-	LD A, (ZMIENNA_INT)
-	BIT 0, A
-	LD A, 0x00
+	; przycisk nacisniety
+
+	; pierw sprawdzamy, czy nie wyszedl dopiero co z przerwania
+	; zakladamy, iz przerwanie ustawia wszystkie bity danej zmiennej na 1
+	LD A, (ZMIENNA_INT) ; pobierz stan zmiennej 
+	BIT 0, A ; sprawdz stan ustawienia bitow zmiennej
+
+	LD A, 0x00 ; w miedzy czasie wyzeruj zmienna znacznikowa przerwania
 	LD (ZMIENNA_INT), A
-	JR NZ, NACISNIETY
+
+	JR NZ, NACISNIETY ; omijamy inkrementowanie, skoro wyszlismy z przerwania
 
 	; INKREMENTUJ LICZNIK
 	CALL INKREMENTUJ
 
 	; wypisz na ledy wartosc zmiennej
-	CALL WYSWIETL_ZMIENNA
+	LD A, (ZMIENNA)
+	OUT (0x00), A
+
 	
 	NACISNIETY:
 	; PRZYCISK NACISNIETY
 	; ODCZEKUJEMY DEBOUNCING
 	CALL DELAY
 
+	; drugie oczekiwanie, aby przycisk zostal puszczony
 	OCZEKIWANIE2:
-		IN A, (0x00)
-		BIT 4, A
-		JR Z, OCZEKIWANIE2
+		IN A, (0x00) ; zaladuj stan hexa
+		BIT 4, A ; sprawdz stan przycisku
+		JR Z, OCZEKIWANIE2 ; jesli nadal jest wcisniety, powtarzaj
 	
 	; PRZYCISK PUSZCZONY
 	; ODCZEKUJEMY DEBOUNCING
@@ -106,16 +131,18 @@ DELAY:
 	RET
 
 INKREMENTUJ:
-
+; zadaniem procedury jest zinkrementowac licznik johsnona.
+; aby to zrobic dla czterobitowego kodu, musimy przesuwac w prawo
+; i jednoczesnie uzupelniac bit zero negacja czwartego bitu(ktory wychodzi).
 	PUSH AF
-	LD A, (ZMIENNA)
-	BIT 3, A
+	LD A, (ZMIENNA) ; pobierz zmienna
+	BIT 3, A ; sprawdz stan czwartego bitu
 	 
 	SCF ;SET CARRY FLAG
 	CCF ;INVERT CARRY FLAG(RESET CF)
 	
 	; TUTAJ CF=0
-	; JEŒLI BIT3, A == 0
+	; JESLI BIT3, A == 0
 	; TO USTAW CF
 	
 	JR NZ, PO_MODYFIKACJI_CF
@@ -125,15 +152,8 @@ INKREMENTUJ:
 	
 	; PRZESUN W LEWO, UZUPELNIJ NASZYM CARRY Z PRAWEJ
 	RLA ;
-	LD (ZMIENNA), A
-	POP AF
-	RET
 
-WYSWIETL_ZMIENNA:
-	PUSH AF
-	; wypisz na ledy wartosc zmiennej
-	LD A, (ZMIENNA)
-	OUT (0x00), A
+	LD (ZMIENNA), A ; uaktualnij zmienna
 	POP AF
 	RET
 
@@ -141,5 +161,5 @@ ZMIENNA:
 DB 0xA0
 ZMIENNA_INT:
 DB 0x0A
-WARTOSC_JOHNSON:
+WARTOSCI_JOHNSON:
 DB 0x00, 0x01, 0x03, 0x07, 0x0F, 0x0E, 0x0C, 0x08
