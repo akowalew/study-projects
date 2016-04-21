@@ -1,7 +1,7 @@
 \documentclass[]{report}
 
 \usepackage{graphicx}
-  
+\usepackage{listings}
 \usepackage{polski}
 \usepackage[latin2]{inputenc}
 
@@ -9,7 +9,36 @@
 \title{Techniki Mikroprocesorowe - Projekt nr 2.}
 \author{Adam Kowalewski, Maciej K³os}
 
+\newcommand{\hex}[1]{\texttt{0x#1}}
+\newcommand{\cmd}[1]{\texttt{#1}}
+\newcommand{\zmienna}{\textit{ZMIENNA} }
+\newcommand{\zmiennaint}{\textit{ZMIENNA\_INT} }
+\newcommand{\flaga}{\textit{FLAGA} }
+
 \begin{document}
+
+\lstdefinelanguage
+   [x64]{Assembler}     % add a "x64" dialect of Assembler
+   [x86masm]{Assembler} % based on the "x86masm" dialect
+   % with these extra keywords:
+   {morekeywords={B, BC, DI, LD, IM, OUT, EI, JR, BIT, RES, NZ, Z, A, AF, IN, EX, EXX, CALL, LD, RLA, SCF, CCF, B, C, AND, XOR, RETI, BC, AF}} % etc.
+
+\lstset{
+alsoletter={'},
+showtabs=false,
+showspaces=false,
+showstringspaces=false,
+basicstyle=\small,
+commentstyle=,
+tabsize=2,
+language=[x64]Assembler,
+frame=trBL,
+keywords=[0]{BC}
+keywords=[3]{EXX},
+keywordstyle={[3]\ttfamily\color{red!80!orange}}
+}
+
+
 \maketitle 
 
 \begin{center}
@@ -44,22 +73,265 @@ Kod, jak widaæ, jest cykliczny, przy czym tylko okre¶lone warto¶ci spo¶ród wszys
 \item Je¶li natomiast jest równy jeden, najm³odszy ustaw na zero
 \end{enumerate}
 
-\section*{Schemat blokowy sprzêtowy}
+\newpage
+\section*{Rozwi±zanie zadania - strona sprzêtowa}
 
+\begin{figure}[h!]
+\centering
+\includegraphics[height=425px, angle=-90]{img/lab2-3.png}
+\caption{Schemat sprzêtowy zaprojektowanego przez nas licznika}
+\end{figure}
 
-\section*{Schemat blokowy programu}
-
-
-\section*{Opis poszczególnych elementów programu}
-
+\newpage
+\section*{Rozwi±zanie zadania - strona programowa}
 \subsection*{Reset programu}
 
+\begin{lstlisting}
+ORG	1800h
+;---------------------------------------------
+; RESET, start programu spod adresu 0
+;---------------------------------------------
+RESET:
+	LD	SP, 0x2000 ; inicjuj stos
+
+	IM	1 ; pierwszy typ przerwan
+
+	; inicjuj licznik
+	LD 	A, 0xF0
+	LD 	(ZMIENNA), A
+	OUT	(0x00), A ; wyswietl wynik na ledach
+
+	LD	(ZMIENNA_INT), A ; zaladuj zmienna_int zerem
+
+	EI
+	JR	LOOP 	; skocz do petli glownej
+\end{lstlisting}
+
+Procedura obs³ugi \cmd{RESETu}, tak jak zosta³o to przewidziane w procesorze Z80, jest umieszczona na samym pocz±tku pamiêci (u nas ma to miejsce pod adresem \hex{1800}, gdy¿ pamiêæ w u¿ywanym przez nas uk³adzie emuluj±cym Z80 jest przesuniêta).
+
+Pierw ustawiamy wska¼nik stosu na warto¶æ \hex{2000}. Dostêpna dla nas pamiêæ koñczy siê w³a¶nie w tym miejscu. W³a¶ciwie to ostatnia dostêpna dla nas komórka znajduje siê w miejscu \hex{1999}, ale w zwi±zku z tym, i¿ wykonywana jest \textbf{predekrementacja}, to pierw zostanie zmniejszony wska¼nik stosu o jeden, a dopiero potem zapisana zostanie dana (w przypadku operacji \cmd{PUSH}).
+
+Nastêpnie inicjujemy zmienne u¿ywane przez nas w programie. Bêd± to zmienne \zmienna oraz \zmiennaint. Obie inicjujemy \textbf{zerami}. Na koniec skaczemy do pêtli g³ównej programu.
+
+\newpage
 \subsection*{Pêtla g³ówna programu}
+
+Pierw przestawimy schemat blokowy, w jaki to sposób dzia³a nasza pêtla g³ówna po wyj¶ciu z RESETu :\\
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=\textwidth]{img/Diagram1.png}
+\caption{Pêtla g³ówna}
+\end{figure}
+
+Teraz pora na kod, czyli jak to zaprogramowali¶my (((oklaski))) \\
+\newpage
+\begin{lstlisting}
+;-------------------------------------------------
+; Petla glowna programu
+;-------------------------------------------------
+LOOP:
+	OCZEKIWANIE: 		; aktywnie oczekujemy na nacisniecie
+		IN 	A, (00h) 	; pobierz stan hexa
+		BIT	INC_BTN, A 			; sprawdz, czy nacisnieto przycisk
+		JR 	NZ, OCZEKIWANIE ; jesli nie, powtorz
+
+	; przycisk nacisniety.
+	; pierw sprawdzamy, czy nie byly oba wcisniete
+	DI	
+	
+	LD 		A, (ZMIENNA_INT) ; pobierz stan flagi	
+	BIT 	FLAGA, A ; sprawdz stan 
+	
+	JR 		NZ, NOT_INC ; omijamy, jesli flaga ustawiona
+	CALL 	INKREMENTUJ ; je¶li nie, inkrementujemy licznik
+	JR		AFTER_INC
+	
+NOT_INC:
+	RES 	FLAGA, A ; skasuj flage
+	LD 		(ZMIENNA_INT), A
+	
+AFTER_INC:
+	EI
+	
+	CALL 	DELAY ; Odczekujemy debouncing
+	
+	OCZEKIWANIE2: ; oczekiwanie, aby przycisk zostal puszczony
+		IN 	A, (0x00) ; zaladuj stan hexa
+		BIT INC_BTN, A ; sprawdz stan przycisku
+		JR 	Z, OCZEKIWANIE2 ; jesli nadal jest wcisniety, petla
+		
+	CALL 	DELAY ; przycisk puszczony, odczekaj
+	
+	JR 	LOOP ; zapetl program
+\end{lstlisting}
+
+Pêtla g³ówna nie jest skomplikowana. Jedyne zadanie jakie jest w niej do wykonania to aktywne oczekiwanie na naci¶niêcie przycisku inkrementacji.
+
+Za oczekiwanie na naci¶niêcie przycisku odpowiada pierwsza pod-pêtla o etykiecie \textit{OCZEKIWANIE}. W niej po prostu ca³y czas czytamy port (pod adresem \hex{00}, w³a¶ciwie to nie mo¿emy tu wstawiæ dowoln± liczbê 8bit, gdy¿ nie dekodujemy adresu). Po za³adowaniu portu sprawdzamy, czy odpowiadaj±cy przyciskowi bit (tutaj nazwany symbolicznie \textit{INC\_BTN}) jest \textbf{wyzerowany} - bo to oznacza, ¿e jest \textbf{naci¶niêty} (zastosowany pullup rezystorowy)
+
+Nastêpnie kontrolujemy stan znacznika, mówi±cego o tym, czy czasem nie wyszli¶my dopiero co z przerwania \textbf{i dwa przyciski by³y wci¶niête}. Bit odpowiadaj±cy za ten znacznik to  \flaga. Je¶li takie zdarzenie mia³o miejsce, to omijamy inkrementacjê. 
+
+Wa¿ne jest to, i¿ przycisk inkrementacji \textbf{reaguje zboczem}. Istotna jest zatem pêtla \textit{OCZEKIWANIE2}, gdzie musimy odczekaæ, a¿ u¿ytkownik pu¶ci przycisk.
+
+Po ka¿dym \textbf{wci¶niêciu i puszczeniu} przycisku inkrementacji \textbf{odczekujemy pewien czas}, by min±³ okres drgania styków. Tego odczekiwania nie stosujemy do przycisku ³adowania. On jest asynchroniczny.
 
 \subsection*{Obs³uga przerwania maskowalnego}
 
+\begin{figure}[h]
+\centering
+\includegraphics[height=200px]{img/Diagram2.png}
+\caption{Schemat dzia³ania procedury przerwania maskowalnego.}
+\end{figure}
+
+Teraz pora na kawa³ek kodu, czyli co i jak:
+\newpage
+\begin{lstlisting}
+DS	0x1838-$
+;-------------------------------------------------
+; INT, procedura przerwania maskowalnego
+;-------------------------------------------------
+INT_LADOWANIE:
+	EX 	AF, AF
+	EXX
+	
+	IN 	A, (00h) ; pobierz stan HEXa, wartosc w kodzie NKB
+	
+	; tutaj trzeba to przerobic na kod johnsona	
+	LD 	B, 0x07		; maska trzech pierwszych bitow
+	AND B 				; wyzeruj pozostale	
+	LD 	HL, WARTOSCI_JOHNSON ; zaladuj adres poczatku tablicy
+	LD 	C, A 			; wrzuc nasz kod przesuniecia do C
+	LD 	B, 0x00 	;  B wyzeruj
+	ADD HL, BC		; dodaj przesuniecie, wynik w HL
+	
+	LD 	A, (HL) 	; obliczylismy miejsce w tablicy
+	LD 	(ZMIENNA), A ; teraz ladujemy ta wartosc do zmiennej
+	
+	OUT (0x00), A	; wyswietl wynik na ledach	
+	
+	IN	A, (00h) 	; pobierz stan przycisku
+	BIT	INC_BTN, A ; sprawdz, czy czasem teraz nie jest wcisly
+	JR	NZ, NIEWCISNIETY ; jesli nie, to skocz
+	LD 	A, FLAGA ; jesli tak, ustaw flage
+	LD 	(ZMIENNA_INT), A
+	
+NIEWCISNIETY:
+	EX 	AF, AF
+	EXX
+	EI
+	
+	RETI
+\end{lstlisting}
+
+Zgodnie z u¿ytym trybem pracy przerwania maskowalnego \cmd{IM 1} wynika, i¿ procedura jego obs³ugi musi zostaæ umieszczona w adresie \hex{38} licz±c od pocz±tku pamiêci. W naszym przypadku bêdzie to \hex{1838}, co te¿ wykonuje pierwsza dyrektywa
+
+Po wej¶ciu do przerwania blokowana jest flaga ich dalszej obs³ugi, przez co nie musimy dodatkowo tego czyniæ. Jedyne co musimy po wej¶ciu do przerwania uczyniæ, to przerzuciæ siê na \textbf{drugi zestaw rejestrów}, by nie naruszyæ struktury dzia³ania aktualnie wykonywanego programu. S³u¿± do tego instrukcje \cmd{EX, EXX}. Zdecydowali¶my siê wymieniæ wszystkie rejestry, gdy¿ bêdziemy korzystaæ jeszcze z rejestrów \cmd{B, C}.
+
+Samo ³adowanie wygl±da nastêpuj±co : 
+\begin{itemize}
+\item Zczytaj warto¶æ z prze³±cznika szesnastkowego
+\item Zamaskuj tylko trzy pierwsze bity (z 16 mamy tylko 8 kombinacji, wiêc ignorujemy pozosta³e bity) - otrzymujesz numer kombinacji k. Johnsona
+\item Odczytujesz z tablicy \textit{WARTOSCI\_JOHNSON} warto¶æ kodu o danym numerze
+\item Zapisujesz warto¶æ kodu do zmiennej i na diody
+\end{itemize}
+
+Ztablicowali¶my kody Johnsona. Jest ich zawsze o wiele mniej ni¿ ca³kowita ilo¶æ kombinacji na $n$ bitach, a sam algorytm generowania kodu o danym numerze jest tylko niepotrzebnym utrudnieniem. Teraz, wystarczy za³adowaæ adres pocz±tku tablicy do rejestru, dodaæ do niego przesuniêcie i odczytaæ to, co siê znajduje w pamiêci.
+
+Zanim wyjdziemy, sprawdzamy, czy czasem \textbf{jednocze¶nie nie jest wci¶niêty przycisk inkrementacji}. Je¶li tak, ustawiamy odpowiedni± flagê.
+
+Na koniec, \textbf{przywracamy stan rejestrów}, przerzucaj±c siê na roboczy zestaw rejestrów. Wychodz±c, \textbf{aktywujemy przerwania}.
+
 \subsection*{Inkrementowanie}
 
-\subsection*{title}
+\begin{figure}[h!]
+\centering
+\includegraphics[height=300px]{img/Diagram3.png}
+\caption{Procedura wykonuj±ca inkrementacjê i wy¶wietlanie wyniku}
+\end{figure}
+
+
+\begin{lstlisting}
+INKREMENTUJ:
+	PUSH 	AF
+	LD 	A, (ZMIENNA) ; pobierz licznik
+	BIT 3, A ; sprawdz stan czwartego bitu
+
+	SCF 	
+	CCF 	; resetuj carry (1 -> 0)
+	; TUTAJ CF=0
+	; JESLI BIT3, A == 0
+	; TO USTAW CF
+	JR 	NZ, PO_MODYFIKACJI_CF
+	SCF 	; ustaw carry
+	
+PO_MODYFIKACJI_CF:
+	RLA ; przesun w lewo, uzupelnij carry z prawej
+
+	LD 	(ZMIENNA), A ; uaktualnij zmienna
+	OUT	(0x00), A ; wyswietl wynik na ledach
+
+	POP	AF
+	RET
+\end{lstlisting}
+
+Inkrementowanie kodu Johnsona nie sprawia wiêkszych trudno¶ci. Ca³o¶æ polega na \textbf{przesuwaniu w lewo i uzupe³nianiu odpowiednim} bitem na pocz±tku. Bit ten jest \textbf{negacj±} tego, który wypada podczas przesuwania. Nasz kod jest 4ro bitowy, wiêc badamy stan bitu 4 \textbf{przed} przesuniêciem.
+
+Z80 oferuje instrukcjê \cmd{RLA}. Powoduje ona przesuniêcie w lewo akumulatora z jednoczesnym uzupe³nieniem z prawej warto¶ci± znacznika \textit{Carry} \textbf{przed} wykonaniem przesuwania. Nowe \textit{Carry} jest ustawiane tym, co wypad³o z lewej, ale nas to nie interesuje.
+
+Posiadaj±c wiedzê na temat tego, jaki by³ bit nr 4 odpowiednio ustawiamy/resetujemy znacznik \textit{Carry} tak, by instrukcja \cmd{RLA} dokona³a wtedy po¿±danego przez nas uzupe³nienia.
+
+Jak na procedurê przysta³o, korzystamy z akumulatora i rejestru znaczników, które na pocz±tku i na koñcu funkcji \textbf{zachowujemy i pobieramy ze stosu.}
+
+\newpage
+\subsection*{Debouncing}
+
+\begin{lstlisting}
+;-------------------------------------------------
+; Delay - procedura odczekujaca okolo 50ms
+;-------------------------------------------------
+DELAY:
+	PUSH 	AF ; odloz na stos rejestry
+	PUSH 	BC
+	
+	XOR 	A ; wyzeruj akumulator
+	LD 	B, 0x1E	; w przyblizeniu 50ms
+
+	INCREMENT_OUTER: ; zewnetrzna petla
+		INCREMENT_INNER:
+			INC 	A
+			JR 	NZ, INCREMENT_INNER
+		DEC 	B ; dekrementuj B
+		JR 	NZ, INCREMENT_OUTER ; jesli zero, to koncz
+		
+	POP 	BC
+	POP 	AF
+	RET
+\end{lstlisting}
+
+Debouncing w naszym przypadku polega na zwyk³ym odczekaniu w pêtli zamierzonego okresu czasu. Na oscyloskopie sprawdzili¶my, i¿ przy wybranej przez nas warto¶ci uzyskali¶my opó¼nienie w wielko¶ci oko³o 50ms
+
+Samo odczekiwanie to po prostu podwójna pêtla w której dekrementowane s± rejestry A, B. Jeden obieg pêtli zewnêtrznej to 256 obiegów pêtli wewnêtrznej.
+
+Czas 50ms to w przybli¿eniu optymalny dla wiêkszo¶ci prostych przycisków, by te mog³y przestaæ drgaæ, co potwierdzi³y te¿ nasze pó¼niejsze testy
+
+\subsection*{Zmienne i sta³e u¿yte w programie}
+\begin{lstlisting}
+;-------------------------------------------------
+; Dane programu
+;-------------------------------------------------
+ZMIENNA: ;  licznik
+DB 0x00
+
+ZMIENNA_INT: ; znacznik przerwania
+DB 0x00
+
+WARTOSCI_JOHNSON: ; stablicowane wartosci kodu Johnsona
+DB 0x00, 0x01, 0x03, 0x07, 0x0F, 0x0E, 0x0C, 0x08
+
+INC_BTN:	equ	4	; sta³a, numer przycisku
+FLAGA:		equ	0 ; sta³a, numer bitu flagi
+\end{lstlisting}
+
 
 \end{document}
