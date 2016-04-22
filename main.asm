@@ -4,7 +4,7 @@
 ;
 ;-------------------------------------------------------------------------------
             .cdecls C,LIST,"msp430.h"       ; Include device header file
-            
+
 			.text                           ; Assemble into program memory
             .global RESET
             .retain                         ; Override ELF conditional linking
@@ -39,17 +39,15 @@ LICZNIK		.byte	0x00
 FLAGI		.byte 	0x00
 
 TAB_JOHNSON	.byte	0x00, 0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF, 0xFE, 0xFC, 0xF8, 0xF0, 0xE0, 0xC0, 0x80
-
 ;-------------------------------------------------------------------------------
 ;	Program Constants
 ;-------------------------------------------------------------------------------
 BTN_LOAD		.set	0x01
-BTN_INC			.set	0x80
+BTN_INC			.set	0x08
 
-LOAD_PRESSED	.set	0x01
-INC_PRESSED		.set	0x02
-LOAD_RELEASED	.set	0x04
-INC_RELEASED	.set	0x08
+LOAD_CHANGED	.set	0x01
+INC_CHANGED		.set	0x02
+IS_TO_LOAD		.set	0x04
 
 ;-------------------------------------------------------------------------------
 ; RESET INTERRUPT VECTOR
@@ -85,33 +83,38 @@ StopWDT     mov.w   #WDTPW|WDTHOLD,	&WDTCTL  ; Stop watchdog timer
 ; Main loop here
 ;-------------------------------------------------------------------------------
 MainLoop
-
-			bit.b	#BTN_LOAD, &P1IFG		; Is LOAD_BTN interrupt flag set ?
-			jz		LOAD_INT_FLAG_NOT_SET	; if not, branch
+			bit.b	#LOAD_CHANGED, FLAGI	; Is LOAD_BTN interrupt flag set ?
+			jz		LOAD_NOT_CHANGED		; if not, branch
+			bic.b	#LOAD_CHANGED, FLAGI
 
 			call 	#BtnLoadChanged			; BtnLoad is changed, we have to check it
 
-LOAD_INT_FLAG_NOT_SET
-			bit.b	#LOAD_PRESSED, FLAGI	; Is LOAD_BTN pressed ?
-			jz		LOAD_NOT_PRESSED 		; If not, branch
-
-			call	#LOAD					; Execute asynchronic LOAD function
-
-			jmp 	MainLoop				; We have to don't care about INC_BTN if LOAD_BTN is pressed
-
-LOAD_NOT_PRESSED
-			bit.b	#BTN_INC, &P1IFG		; Is 	BTN_INC interrupt flag set?
-			jz		INC_INT_FLAG_NOT_SET	; if not, branch
+LOAD_NOT_CHANGED
+			bit.b	#INC_CHANGED, FLAGI		; Is 	BTN_INC interrupt flag set?
+			jz		INC_NOT_CHANGED			; if not, branch
+			bic.b	#INC_CHANGED, FLAGI
 
 			call	#BtnIncChanged
 
-			jmp 	MainLoop				; we have to check one more time the whole loop
+INC_NOT_CHANGED
+			bit.b	#IS_TO_LOAD, FLAGI		; Is LOAD_BTN pressed ?
+			jz		TO_SLEEP 		; If not, branch
 
-INC_INT_FLAG_NOT_SET
+			call	#LOAD					; Execute asynchronic LOAD function
 
+			bit.b	#BTN_LOAD, &P1IN
+			jz 		MainLoop
+
+			bic.b	#IS_TO_LOAD, FLAGI
+			jmp 	MainLoop				; We have to don't care about INC_BTN if LOAD_BTN is pressed
+
+TO_SLEEP
 			;--------------------
 			; GO SLEEEEEEP!!!
 			;--------------------
+			bit.b	#IS_TO_LOAD|LOAD_CHANGED|INC_CHANGED, FLAGI
+			jnz		MainLoop
+
 			bis		#CPUOFF|SCG1|SCG0|OSCOFF, SR
 
 			jmp MainLoop
@@ -126,19 +129,10 @@ INT_PORT1
 			bit.b	#BTN_LOAD, &P1IFG		; Is LOAD_BTN interrupt flag set?
 			jz		NOT_LOAD_INT_FLAG		; branch if not
 
-			bic.b	#BTN_LOAD, &P1IE		; DISABLE LOAD INT
-			bit.b	#BTN_LOAD, &P1IES		; IS HIGH -> LOW transition ?
+			bic.b	#BTN_LOAD, &P1IFG
+			bic.b	#BTN_LOAD, &P1IE
 
-			jnz		LOAD_SET_PRESSED		; If it's true, we have a pressed button. Let's branch
-
-			bis.b	#LOAD_RELEASED, FLAGI	; If not, we have a released button.
-			jmp 	LOAD_INVERT_EDGE		; branch to next step
-LOAD_SET_PRESSED
-			bis.b	#LOAD_PRESSED, FLAGI	; we have pushed button
-
-LOAD_INVERT_EDGE
-			xor.b	#BTN_LOAD, &P1IES		; Invert type of Edge on LOAD_BTN
-			jmp 	CANCEL_SLEEP
+			bis.b	#LOAD_CHANGED, FLAGI
 
 	;----------------
 	; Check INC_BTN
@@ -148,14 +142,10 @@ NOT_LOAD_INT_FLAG
 			bit.b	#BTN_INC, &P1IFG		; IS INC_BTN INT FLAG?
 			jz		NOT_INC_INT_FLAG		; branch if not
 
-			bic.b	#BTN_INC, &P1IE			; Disable INC_BTN interrupt
-			bit.b	#BTN_INC, &P1IES		; Is High to Low transition ?
+			bic.b	#BTN_INC, &P1IFG
+			bic.b	#BTN_INC, &P1IE
 
-			jz		INC_INVERT_EDGE			; if not, branch, because INC_BTN is not pressed
-			bis.b	#INC_PRESSED, FLAGI		; if it is true, Set the PRESSED flag on INC_BTN
-
-INC_INVERT_EDGE
-			xor.b	#BTN_INC, &P1IES		; Invert type of Edge on INC_BTN
+			bis.b	#INC_CHANGED, FLAGI
 
 NOT_INC_INT_FLAG
 CANCEL_SLEEP
@@ -163,6 +153,7 @@ CANCEL_SLEEP
 			; ------------------------
 			; DO SOMETHING TO CANCEL SLEEP
 			; ------------------------
+
 			bic		#CPUOFF|SCG1|SCG0|OSCOFF, 0(SP)
 			reti
 
@@ -171,16 +162,19 @@ CANCEL_SLEEP
 ;-------------------------------------------------------------------------------
 BtnLoadChanged
 			call 	#DEBOUNCE				; First, wait for debounce, because button state is changed
+			dint
 
-			bit.b	#LOAD_RELEASED, FLAGI	; Is LOAD_BTN released?
-			jz		LOAD_NOT_RELEASED		; If not, branch
+			bit.b	#BTN_LOAD, &P1IN
+			jnz		LOAD_NOT_PRESSED
 
-			bic.b	#LOAD_PRESSED|LOAD_RELEASED|INC_PRESSED, FLAGI	; If it is released, Clear the flags
-			;bic.b	#BTN_INC, &P1IFG		; Clear also INC_BTN flag
-LOAD_NOT_RELEASED
-			bic.b	#BTN_LOAD, &P1IFG		; Before we re-enable interrupts on BTN_LOAD, we've to clear interrupt flag
-			bis.b	#BTN_LOAD, &P1IE		; Enable interrupt on BTN_LOAD
+			bis.b	#IS_TO_LOAD, FLAGI
+			jmp 	AFTER_LOAD_CHECK
 
+LOAD_NOT_PRESSED
+AFTER_LOAD_CHECK
+			bis.b	#BTN_LOAD, &P1IE
+
+			eint
 			ret
 
 ;-------------------------------------------------------------------------------
@@ -188,16 +182,20 @@ LOAD_NOT_RELEASED
 ;-------------------------------------------------------------------------------
 BtnIncChanged
 			call 	#DEBOUNCE				; wait for debounce, because button state is changed
+			dint
 
-			bit.b	#INC_PRESSED, FLAGI		; Is INC_BTN pressed?
-			jz		INC_NOT_PRESSED			; if not, branch
-			; if it is true, execute code below:
-			call	#INCREMENT
-			bic.b	#INC_PRESSED, FLAGI		; Clear flag
+			bit.b	#BTN_INC, &P1IN
+			jnz		INC_NOT_PRESSED
+
+			bit.b	#IS_TO_LOAD, FLAGI
+			jnz		INC_NOT_PRESSED
+
+			call 	#INCREMENT
+
 INC_NOT_PRESSED
-			bic.b	#BTN_INC, &P1IFG		; Clear interrupt Flag, before re-enable
-			bis.b	#BTN_INC, &P1IE			; Enable interrupt on this pin
-
+AFTER_INC_CHECK
+			bis.b	#BTN_INC, &P1IE
+			eint
 			ret
 
 ;-------------------------------------------------------------------------------
@@ -244,13 +242,12 @@ DEB_DEC		dec.w		R4
 			pop 		R4
 			ret
 
-
 ;-------------------------------------------------------------------------------
 ; Stack Pointer definition
 ;-------------------------------------------------------------------------------
             .global __STACK_END
             .sect   .stack
-            
+
 ;-------------------------------------------------------------------------------
 ; Interrupt Vectors
 ;-------------------------------------------------------------------------------
@@ -258,4 +255,5 @@ DEB_DEC		dec.w		R4
             .short  RESET
             .sect	".int04"
             .short	INT_PORT1
+
 
