@@ -24,6 +24,7 @@ BTN_DIR			.set		P1DIR
 BTN_IFG			.set		P1IFG
 BTN_IE			.set		P1IE
 BTN_IES			.set		P1IES
+BTN_IN			.set		P1IN
 
 SEG7_DIR		.set		P2DIR
 SEG7_OUT		.set		P2OUT
@@ -61,20 +62,22 @@ StopWDT     mov.w   #WDTPW|WDTHOLD,	&WDTCTL  ; Stop watchdog timer
 			;----------------
 
 			bic.b	#BTN_LOAD|BTN_INC, 	&P1DIR	;	Port1 jako WEJSCIE. PRZYCISKI
-			mov.b	#0xFF, 	&P2DIR				;	Port2 jako wejscie. WYSWIETLACZ
-			mov.b	#0x00, 	&P3DIR				;	Port3 jako wejcie. HEX_IN
+			mov.b	#0xFF, 	&SEG7_DIR				;	Port2 jako wejscie. WYSWIETLACZ
+			mov.b	#0x00, 	&HEX_DIR				;	Port3 jako wejcie. HEX_IN
 
 			;----------------
 			; Configure interrupts
 			;----------------
-			bis.b	#BTN_LOAD|BTN_INC, 	&P1IES	;	Przycisk1, HIGH -> LOW
-			bis.b	#BTN_LOAD|BTN_INC, 	&P1IE	;	Przycisk1, Interrupt Enable
+			bis.b	#BTN_LOAD|BTN_INC, 	&BTN_IES	;	Przycisk1, HIGH -> LOW
+			bis.b	#BTN_LOAD|BTN_INC, 	&BTN_IE	;	Przycisk1, Interrupt Enable
 
 			;----------------
 			; Configure variables
 			;----------------
 			mov.b	#0x00, LICZNIK
 			mov.b	#0x00, FLAGI
+
+			mov.b	LICZNIK, &SEG7_OUT
 
 			eint								; 	Global Enable Interrupts
 			jmp MainLoop
@@ -126,11 +129,11 @@ INT_PORT1
 	;----------------
 	; Check LOAD_BTN
 	;----------------
-			bit.b	#BTN_LOAD, &P1IFG		; Is LOAD_BTN interrupt flag set?
+			bit.b	#BTN_LOAD, &BTN_IFG		; Is LOAD_BTN interrupt flag set?
 			jz		NOT_LOAD_INT_FLAG		; branch if not
 
-			bic.b	#BTN_LOAD, &P1IFG
-			bic.b	#BTN_LOAD, &P1IE
+			bic.b	#BTN_LOAD, &BTN_IFG
+			bic.b	#BTN_LOAD, &BTN_IE
 
 			bis.b	#LOAD_CHANGED, FLAGI
 
@@ -139,11 +142,11 @@ INT_PORT1
 	;----------------
 NOT_LOAD_INT_FLAG
 
-			bit.b	#BTN_INC, &P1IFG		; IS INC_BTN INT FLAG?
+			bit.b	#BTN_INC, &BTN_IFG		; IS INC_BTN INT FLAG?
 			jz		NOT_INC_INT_FLAG		; branch if not
 
-			bic.b	#BTN_INC, &P1IFG
-			bic.b	#BTN_INC, &P1IE
+			bic.b	#BTN_INC, &BTN_IFG
+			bic.b	#BTN_INC, &BTN_IE
 
 			bis.b	#INC_CHANGED, FLAGI
 
@@ -164,7 +167,7 @@ BtnLoadChanged
 			call 	#DEBOUNCE				; First, wait for debounce, because button state is changed
 			dint
 
-			bit.b	#BTN_LOAD, &P1IN
+			bit.b	#BTN_LOAD, &BTN_IN
 			jnz		LOAD_NOT_PRESSED
 
 			bis.b	#IS_TO_LOAD, FLAGI
@@ -172,7 +175,7 @@ BtnLoadChanged
 
 LOAD_NOT_PRESSED
 AFTER_LOAD_CHECK
-			bis.b	#BTN_LOAD, &P1IE
+			bis.b	#BTN_LOAD, &BTN_IE
 
 			eint
 			ret
@@ -184,7 +187,7 @@ BtnIncChanged
 			call 	#DEBOUNCE				; wait for debounce, because button state is changed
 			dint
 
-			bit.b	#BTN_INC, &P1IN
+			bit.b	#BTN_INC, &BTN_IN
 			jnz		INC_NOT_PRESSED
 
 			bit.b	#IS_TO_LOAD, FLAGI
@@ -194,7 +197,7 @@ BtnIncChanged
 
 INC_NOT_PRESSED
 AFTER_INC_CHECK
-			bis.b	#BTN_INC, &P1IE
+			bis.b	#BTN_INC, &BTN_IE
 			eint
 			ret
 
@@ -205,7 +208,7 @@ LOAD
 			push R4
 			push R5
 
-			mov.b	&P3IN, R4
+			mov.b	&HEX_IN, R4
 			and.b	#0x0F, R4
 
 			mov.w	#TAB_JOHNSON, R5
@@ -227,7 +230,7 @@ INCREMENT
 			addc.b	#0x00, LICZNIK
 			xor.b	#0x01, LICZNIK
 
-			mov.b	LICZNIK, &P2OUT
+			mov.b	LICZNIK, &SEG7_OUT
 
 			ret
 
