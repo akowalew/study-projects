@@ -244,37 +244,37 @@ DEBOUNCE
 	push R5
 	push R6
 
-	mov.b	#0, R4    ; button states counter
-	mov.b	#45, R5   ; 45 times checking
+	mov.b	#0, R4    		; button states counter
+	mov.b	#45, R5   		; 45 times checking
 
 SAMPLE_CHECK_LOOP
-	bit.b   R15, BTN_IN ; check button state
-	jnz     SAMPLE_PRESSED  ; if it is not pressed - branch
+	bit.b   R15, BTN_IN 		; check button state
+	jnz     SAMPLE_PRESSED  	; if it is not pressed - branch
 
-	dec.b	R4  ;   if it is pressed - decrement
+	dec.b	R4  			;   if it is pressed - decrement
 	jmp     AFTER_SAMPLE_CHECK
 
 SAMPLE_PRESSED
-	inc.b       R4  ; if it is not pressed - increment
+	inc.b       R4  		; if it is not pressed - increment
 
 AFTER_SAMPLE_CHECK
 
-	mov.b       #200, R6 ; Delay constant - 1ms
+	mov.b       #200, R6 		; Delay constant - 1ms
 DELAY_LOOP
-	dec.b       R6 ; 2 cycles
-	jnz         DELAY_LOOP ; 2 cycles
+	dec.b       R6 			; 2 cycles
+	jnz         DELAY_LOO		; 2 cycles
 
 	; after 1ms delay loop
 	dec.b       R5
-	jnz         SAMPLE_CHECK_LOOP ; make one more sample
+	jnz         SAMPLE_CHECK_LOOP 	; make one more sample
 
 	; after 45 samples
 	; decide now, if button is really pressed, or not
 
-	mov.b       #0, R15 ; assume, it's pressed
-	tst.b       R4  ; test the sum, if it's negative or not
-	jn          BUTTON_IS_PRESSED  ; it's negative, we're right, branch
-	mov.b       #1, R15; It's not negative. Button is not pressed
+	mov.b       #0, R15 		; assume, it's pressed
+	tst.b       R4  		; test the sum, if it's negative or not
+	jn          BUTTON_IS_PRESSED  	; it's negative, we're right, branch
+	mov.b       #1, R15		; It's not negative. Button is not pressed
 
 BUTTON_IS_PRESSED
 
