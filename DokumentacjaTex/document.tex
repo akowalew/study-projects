@@ -1,0 +1,191 @@
+\documentclass[12pt,a4paper]{report}
+\usepackage[OT4]{polski}
+\usepackage[cp1250]{inputenc} 
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\begin{document}
+	
+	% Title Page
+	\title{Robot typu line follower zbudowany \\ i zaprogramowany w oparciu o zestaw Lego Mindstorms. Wstêp do Robotyki, sem. 15Z}
+	\author{Adam Kowalewski, Maciej K³os}
+	\maketitle
+	
+	% Index page
+	\tableofcontents
+	\newpage
+	
+	% 1. Chapter
+	\chapter{Motywacja i ogólna koncepcja}
+	
+		\subparagraph{}
+		Naszym zadaniem by³o utworzenie robota, którego g³ównym celem jest pod¹¿anie za czarn¹ lini¹ na bia³ym tle, oraz który potrafi wykryæ przeszkodê w postaci prostopad³oœcianu. Ca³oœæ mia³a zostaæ wykonana w oparciu o udostêpnione elementy zestawu \textit{Lego Mindstorms}.
+		
+		\subparagraph{}
+		Dziedzina taka jak \textit{Follow the Line} jest bardzo popularn¹ konkurencj¹ turniejow¹, a co za tym idzie powsta³ ju¿ szereg rozmaitych algorytmów sterowania robota, czy te¿ zasady konstrukcji. G³ównym zadaniem robotów jest jak najszybsze pokonanie trasy.
+		
+		\subparagraph{}
+		Zawody laboratoryjne sk³ada³y siê z dwóch etapów:
+		\begin{enumerate}
+			\item Przejechanie po trasie o podwy¿szonym stopniu skomplikowania wraz z ominiêciem przeszkody w celu zaprezentowania jakoœci algorytmu sterowania. Na tym etapie nie by³ naliczany czas.
+			
+			\item Przejechanie po trasie znacznie ³atwiejszej, o wiêkszej iloœci odcinków prostych. Tutaj naliczany by³ czas.
+		\end{enumerate}
+		
+		Wobec tego, cel jaki sobie postawiliœmy, by³ nastêpuj¹cy:
+		\begin{itemize}
+			\item Stworzyæ robota, który przede wszystkim p³ynnym ruchem œledzi liniê,
+			\item Robot mia³ zapewniæ mo¿liwoœæ ominiêcia przeszkody z obu stron
+			\item Robot mia³ omijaæ przeszkodê niezale¿nie od jej wymiarów, d³ugoœci i szerokoœci
+		\end{itemize}
+		
+		To, co uda³o siê nam osi¹gn¹æ zostanie przedstawione w nastêpnych rozdzia³ach.
+	
+	% 2. Chapter
+	\chapter{Konstrukcja robota}
+	
+		\paragraph{Zastosowane czujniki\\}
+		Do poprawnego wykrywania czarnej linii na bia³ym tle potrzebny jest co najmniej jeden czujnik koloru, czy te¿ czujnik œwiat³a odbitego. Zastosowaliœmy oba czujniki. Oba zapewniaj¹ odœwie¿anie z czêstotliwoœci¹ 1kHz, co jest bardzo przydatne zw³aszcza w przypadku szybkich robotów. Czujniki umieœciliœmy w odleg³oœci oko³o 5mm od pod³ogi na wysiêgniku, by nieco oddaliæ czujniki od osi kó³. WskaŸniki s¹ maksymalnie blisko siebie, a co za tym idzie - oba pokrywaj¹ liniê. 
+		
+		Do wykrywania przeszkody zastosowaliœmy czujnik podczerwieni. Umieœciliœmy go mo¿liwie nisko, by wykrywaæ nawet bardzo niskie przeszkody.
+		
+		Dodatkowo przydatny okaza³ siê tzw. \textit{push-button} jako Ÿród³o sygna³u uruchamiaj¹cego robota oraz zatrzymuj¹cego go w wybranym momencie.
+	
+		\paragraph{Elementy wykonawcze\\}
+		Zbudowany robot to przyk³ad maszyny o napêdzie ró¿nicowym z jednym punktem podparcia w postaci ko³a sferycznego. Do jego konstrukcji u¿yliœmy dwa du¿e serwomechanizmy oraz dwa ko³a o najwiêkszej œrednicy. Aktualne po³o¿enie ko³a odczytywaliœmy wprost z biblioteki \textit{EV3dev}.\\
+		
+		Dodatkowo, chc¹c zapewniæ ³atwo realizowalne omijanie przeszkody z obu stron, zdecydowaliœmy siê na zamontowanie czujnika odleg³oœci w œrednim serwomechanizmie, dziêki czemu mogliœmy go obracaæ w zakresie $  ( -90 \textdegree , 90 \textdegree ) $, co dawa³o nam mo¿liwoœæ dok³adnego ocenienia, w jakim miejscu znajduje siê przeszkoda.
+		
+		\paragraph{}
+		Kulkê podporow¹ umieœciliœmy z ty³u pojazdu, solidnie mocuj¹c do podwozia robota. Komputer usadowiliœmy mo¿liwie daleko, tak by œrodek ciê¿koœci by³ przesuniêty do ty³u, co pomaga³o unikn¹æ szarpniêæ podczas gwa³townego przyspieszania i hamowania. \\ 
+		Godny uwagi jest tak¿e sposób upakowania kabli w robocie, tu¿ pod kostk¹, tak by zredukowaæ bezw³adnoœæ robota.\\
+		Zdjêcia poni¿ej dok³adniej przedstawi¹ konstrukcjê robota:
+		
+		\begin{figure}
+		\centering
+		\includegraphics[width=0.7\linewidth]{DSC_0538}
+		\caption{Widok z boku. Na zdjêciu widaæ dok³adnie mikrokomputer oraz serwomechanizmy.}
+		\label{fig:DSC_0538}
+		\end{figure}
+		
+		\begin{figure}
+		\centering
+		\includegraphics[width=0.7\linewidth]{DSC_0549}
+		\caption{Przód robota. Czujniki podczerwieni, a nad nimi czujnik odleg³oœci.}
+		\label{fig:DSC_0549}
+		\end{figure}
+		
+		\begin{figure}
+		\centering
+		\includegraphics[width=0.7\linewidth]{DSC_0551}
+		\caption{Ty³ robota. Widoczny \textit{ballcaster} oraz \textit{pushbutton}}
+		\label{fig:DSC_0551}
+		\end{figure}
+			
+		\begin{figure}
+		\centering
+		\includegraphics[width=0.7\linewidth]{DSC_0544}
+		\caption{Robot na planszy do FTL}
+		\label{fig:DSC_0544}
+		\end{figure}
+	% 3. Chapter
+	\chapter{Algorytm œledzenia linii.}
+	Tutaj zostanie przedstawiony sposób, w jaki robot porusza siê po czarnej linii na bia³ym tle.
+	
+	\section{Zasada dzia³ania algorytmu}
+	Z racji tego, ¿e oba czujniki pokrywaj¹ liniê, musieliœmy podzieliæ program na dwie zasadnicze czêœci :
+	\begin{itemize}
+		\item Sterowanie automatyczne, regulatorem PID,
+		\item Sterowanie manualne
+	\end{itemize}	
+	
+	\paragraph{Sterowanie automatyczne. Regulator PID.}
+	\subparagraph{Sposób dzia³ania\\}
+	Zastosowany schemat regulacji to klasyczny regulator proporcjonalno-ca³kuj¹co-ró¿niczkuj¹cy w wersji dyskretnej.	W zwi¹zku z tym, ca³ka zamienia siê w sumê, a ró¿niczka - w ró¿nicê. Dodatkowo zastosowaliœmy pewne usprawnienie, maj¹ce na celu proporcjonalnie zmniejszaæ prêdkoœæ na zakrêtach zgodnie z ustalon¹ przez nas funkcj¹ liniow¹. Bardzo to pomog³o regulatorowi PID, zw³aszcza pokonywaæ zakrêty z ³ukami, przez co czêœciej program pracuje w tym trybie, zamiast w manualnym.
+	
+	Zastosowaliœmy dwa regulatory PID, których dzia³anie sumuje siê na obu silnikach. Dwa, poniewa¿ mamy dwa czujniki, w dodatku o ró¿nych wskazaniach. Tak otrzymane sterowanie wstawiamy do wspomnianej funkcji ograniczania prêdkoœci. Wszystko na koniec sumujemy i wystawiamy na sterowniki silników.
+	
+	A poni¿ej wycinek kodu obrazuj¹cy dzia³anie regulatora : \\
+	\begin{verbatim}
+		# kalkulacje dla regulatora PID	
+		lerror = lMaxBlack - lval
+		rerror = rMaxBlack - rval
+		
+		lintegral = 0.5 * lintegral + lerror
+		rintegral = 0.5 * rintegral + rerror
+		
+		lderivative = lerror - lastErrorL 
+		rderivative = rerror - lastErrorR
+		
+		lastErrorL = lerror
+		lastErrorR = rerror
+		
+		lcontrol = int((2.6 * lerror + 1 * lintegral + 2.5 * lderivative))
+		rcontrol = int((2.6 * rerror + 1 * rintegral + 2.5 * rderivative))
+		
+		...
+		# Dodatkowe ograniczanie prêdkoœci
+		predkosc = 500 + int((-1) * (abs(rcontrol - lcontrol)))
+		# Ustawienie sterowania na silniki
+		lmotor.run_forever(speed_sp = predkosc + (rcontrol-lcontrol)/2)
+		rmotor.run_forever(speed_sp = predkosc + (lcontrol-rcontrol)/2)
+	\end{verbatim}
+	
+	\subparagraph{Dobór nastaw regulatora\\}
+	Nastawy regulatora PID dobieraliœmy doœwiadczalnie. Zastosowane nastawy nie zapewniaj¹ co prawda bardzo dynamicznej odpowiedzi na skokowe zmiany w czujnikach, ale gwarantuje g³adk¹ jazdê na prostych i l¿ejszych ³ukach. 
+	
+	Podobnie z parametrem funkcji liniowej ograniczaj¹cej pêd robota. Wspó³czynnik $ -1 $ uznaliœmy za odpowiedni¹ szybkoœæ zmniejszania prêdkoœci robota. 
+	
+	\paragraph{Sterowanie manualne}
+	Powsta³o, by zaprogramowaæ pokonywanie zakrêtów pod wiêkszym k¹tem ni¿ 45 stopni. W normalnej sytuacji, regulator przez konstrukcjê robota jest zbyt s³aby, by móc pokonywaæ np. k¹ty proste. W wyniku tego robot po prostu wylatuje z trasy i jedzie w nieskoñczonoœæ prosto (bo sterowanie siê w sumie zeruje na bia³ym tle). Rozwi¹zaliœmy to w nastêpuj¹cy sposób :
+	\begin{enumerate}
+		\item Wykryj, gdy robot ca³kowicie zjecha³ z linii,
+		\item Obróæ siê w przybli¿eniu o 135 stopni w jedn¹ stronê. Obrót w miejscu
+		\item Jeœli nie wykryto ponownie linii, Skrêæ z jeszcze wiêksz¹ prêdkoœci¹, z tym ¿e teraz w drug¹ stronê.
+		\item Skrêcaj tak d³ugo a¿ wykryjesz liniê.
+	\end{enumerate}
+	
+	Metoda ta jest ko³em ratunkowym dla robota po wypadniêciu  z trasy, a przy tym jest pewna. W koñcu trafi na liniê. By zredukowaæ przypadkowoœæ wyboru kierunku skrêtu zaprogramowaliœmy pewn¹ logikê. Program po prostu zapamiêtuje, w którym kierunku skrêca³ ostatnio i dobiera tak nowy kierunek skrêtu. Z obserwacji wynik³o, ¿e znacznie to poprawi³o jazdê po k¹tach prostych.
+	
+	% 4. Chapter
+	\chapter{Algorytm omijania przeszkód.}
+	Tutaj zostanie omówiony sposób, w jaki robot wykrywa i omija przeszkody w postaci prostopad³oœcianu.
+	
+	\section{Zasada dzia³a algorytmu}
+	Algorytm omijania przeszkody za³¹cza siê dopiero wtedy, gdy robot, je¿d¿¹c po linii, wykryje zmianê wskazañ czujnika odleg³oœci, czyli pojawienie siê w bliskiej odleg³oœci przeszkody. Wygl¹da on nastêpuj¹co :
+	\begin{enumerate}
+		\item Zatrzymaj pojazd w sposób ³agodny, unikaj¹c szarpniêæ,
+		\item Obróæ robota o $ 90 \textdegree $ lub o $ - 90 \textdegree $, w zale¿noœci od wyboru podjêtego przez programistê,
+		\item Obróæ czujnik odleg³oœci o ten sam k¹t, ale z przeciwnym znakiem, tak by "patrzy³" prostopadle na przeszkodê,
+		\item Pobierz wskazanie czujnika, by znaæ odleg³oœæ, w jakiej jesteœmy od przeszkody,
+		\item JedŸ tak d³ugo, a¿ z czujnika zniknie przeszkoda, po czym wykonaj pojazdem skrêt powrotny (czujnik pozosaje nadal prostopadle do przeszkody),
+		\item  Robot jest w pewnej odleg³oœci za przeszkod¹. Pobierz wartoœæ czujnika, by móc póŸniej wykryæ ponownie przeszkodê,
+		\item JedŸ tak d³ugo, a¿ w czujniku pojawi siê przeszkoda,
+		\item JedŸ tak d³ugo, a¿ z czujnika zniknie obiekt,
+		\item Wróæ na liniê i kontynuuj program.
+	\end{enumerate}
+		
+	\section{Dobór nastaw regulatora}	
+	Jak widaæ, zastosowany algorytm jest elastyczny, Robot nie ma zapisane na sta³e, jak d³ugo ma jechaæ dooko³a przeszkody, ale w "inteligentny" sposób potrafi wykryæ pojawienie siê jej w czujniku. Prêdkoœæ ustawiona jest jako sta³a, ale mo¿e byæ zmodyfikowana w ³atwy sposób. Wartoœæ pocz¹tkowego wykrycia przeszkody dobrano doœwiadczalnie, podobnie wspó³czynnik wykrycia, kiedy przeszkoda znów siê pojawia, albo znika z pola czujnika.
+	
+	% 5. Chapter
+	\chapter{Podsumowanie. Wady i zalety.}
+		
+		\paragraph{}
+		Podsumowuj¹c, uda³o nam siê osi¹gn¹æ w przybli¿eniu postawione zadanie. Pora usystematyzowaæ, jakimi zaletami i wadami wyró¿nia siê robot : 
+		
+		\subparagraph{Zalety}
+		\begin{itemize}
+			\item Wysoka dok³adnoœæ ruchu po linii. Bardzo rzadko zdarzaj¹ siê oscylacje.
+			\item Prosta konstrukcja. W ³atwy sposób mo¿na zdemontowaæ czêœci i wymieniæ na inne, czy te¿ szybko wymieniæ baterie.
+			\item Ruchomy czujnik odleg³oœci zapewnia elastyczne sterowanie trajektori¹ omijania przeszkody, równie¿ z dowolnej strony.
+			\item Robot sam siê kalibruje przed ka¿dym przejazdem. Wystarczy go tylko postawiæ na trasie i sam dokona pomiaru.
+		\end{itemize}
+		
+		\subparagraph{Wady}
+		\begin{itemize}
+			\item Mimo zastosowanych ulepszeñ bezw³adnoœæ robota nadal jest du¿a. Przez to nie mo¿emy rozwin¹æ wysokich prêdkoœci robotem.
+			\item Algorytm nie jest najszybszy, ale stabilny, a przede wszystkim bez oscylacji.
+		\end{itemize}
+\end{document}

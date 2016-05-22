@@ -1,0 +1,21 @@
+\contentsline {chapter}{\numberline {1}Motywacja i og\'olna koncepcja}{2}
+\contentsline {subparagraph}{}{2}
+\contentsline {subparagraph}{}{2}
+\contentsline {subparagraph}{}{2}
+\contentsline {chapter}{\numberline {2}Konstrukcja robota}{3}
+\contentsline {paragraph}{Zastosowane czujniki\\}{3}
+\contentsline {paragraph}{Elementy wykonawcze\\}{3}
+\contentsline {paragraph}{}{3}
+\contentsline {chapter}{\numberline {3}Algorytm \'sledzenia linii.}{6}
+\contentsline {section}{\numberline {3.1}Zasada dzia\IeC {\l }ania algorytmu}{6}
+\contentsline {paragraph}{Sterowanie automatyczne. Regulator PID.}{6}
+\contentsline {subparagraph}{Spos\'ob dzia\IeC {\l }ania\\}{6}
+\contentsline {subparagraph}{Dob\'or nastaw regulatora\\}{7}
+\contentsline {paragraph}{Sterowanie manualne}{7}
+\contentsline {chapter}{\numberline {4}Algorytm omijania przeszk\'od.}{9}
+\contentsline {section}{\numberline {4.1}Zasada dzia\IeC {\l }a algorytmu}{9}
+\contentsline {section}{\numberline {4.2}Dob\'or nastaw regulatora}{10}
+\contentsline {chapter}{\numberline {5}Podsumowanie. Wady i zalety.}{11}
+\contentsline {paragraph}{}{11}
+\contentsline {subparagraph}{Zalety}{11}
+\contentsline {subparagraph}{Wady}{11}
