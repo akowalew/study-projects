@@ -14,7 +14,7 @@
 #define BTN_LEFT	0x02
 #define BTN_N	2
 #define BTN_ALL (BTN_RIGHT | BTN_LEFT)
-#define BOUNCE_SAMPLES_N    21
+#define BOUNCE_SAMPLES_N    31
 #define DEBOUNCE_TCCR	31
 
 #define BTN_IN	P1IN
@@ -26,8 +26,5 @@
 
 void buttonsInit();
 uint8_t isButtonPressed(uint8_t buttonMask);
-
-void disableButtonsInt();
-void restoreButtonsInt();
 
 #endif /* BUTTONS_H_ */

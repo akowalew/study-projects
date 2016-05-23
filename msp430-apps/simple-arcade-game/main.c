@@ -7,7 +7,7 @@ void initClock()
 {
 	// XT2 ON, LFXT1 LOW FREQ, ACLK DIV = 0, RSEL = 0
 	BCSCTL1 = 0 ;
-	// MCLK = DCOCLK, SMCLK = XT2CLK, DIV = 0
+	// MCLK = XT2, SMCLK = XT2CLK, DIV = 0
 	// XT2S - 3-16MHz, LFXT1S = 32768HZ
 	uint16_t i;
 	do { // Wait for XT2 to stablize
@@ -22,11 +22,9 @@ void initTimers()
 	/* 	TIMER_A ( Taktowanie 32768Hz )
 		-	Odswiezanie wyswietlacza -> 400Hz(~404,5Hz) : TACCR0 = 81 - 1
 		- 	Przesuwanie kursora -> 2Hz : 2^14 - 1
-
 		TIMER_B ( Taktowanie 32768Hz )
 		-	Debounce - 1024Hz : TACCR1 = 32 - 1
 	*/
-
 	// ACLK, DIVIDER=1, CONTINUOUS, INT ENABLE
 	TACTL = (TASSEL_1 | ID_0 /* |  MC_2 */ );
 	// NO CAPTURE, INT ENABLE
@@ -47,6 +45,7 @@ int main(void) {
     initTimers();
     displayInit();
     buttonsInit();
+    gameInit();
     _EINT();
 
     uint8_t isGameChanged = 0;

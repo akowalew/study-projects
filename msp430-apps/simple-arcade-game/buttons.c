@@ -4,7 +4,6 @@
  *  Created on: May 23, 2016
  *      Author: student
  */
-
 #include "buttons.h"
 
 volatile uint8_t debounceFlags;
@@ -15,33 +14,25 @@ const uint8_t buttonMasks[BTN_N] = {BTN_LEFT, BTN_RIGHT};
 volatile uint8_t counts0[BTN_N];
 volatile uint8_t counts1[BTN_N];
 
-volatile uint8_t btnIntState;
-/**
- * 	kierunek : wejscie, przerwania, zbocze opadajace
- */
-void buttonsInit()
+void buttonsInit() 	// kierunek : wejscie, przerwania, zbocze opadajace
 {
-	BTN_DIR &= ~(  BTN_RIGHT | BTN_LEFT) ;
-	BTN_IES |= (  BTN_RIGHT | BTN_LEFT ) ;
-	if(BTN_IN & BTN_LEFT)
-		buttonStates |= BTN_LEFT;
-	if(BTN_IN & BTN_RIGHT)
-		buttonStates |= BTN_RIGHT;
-	BTN_IE |= ( BTN_RIGHT | BTN_LEFT) ;
+	BTN_DIR &= ~BTN_ALL ;
+	BTN_IES |= BTN_ALL ;
+	buttonStates = BTN_ALL ; // na starcie wszystkie sa puszczone(trafne spostrzeżenie)
+	BTN_IE |= BTN_ALL ;
 }
 
 #pragma vector=BTN_VECTOR
 __interrupt void BtnInt(void)
 {
-	TBCTL |= MC_2; // turn on TimerB
-	TBCCTL0 = CCIE; // turn on debunce compare int
+	timerBTurnOn(); // also : TBCCTL0 = CCIE; // turn on debunce compare int
 
     uint8_t mask;
-    uint8_t i;
-    for(i = 0 ; i < BTN_N ; i++)
+    int8_t i = BTN_N-1;
+    for(i = BTN_N-1 ; i > 0 ; i--)
     {
         mask = buttonMasks[i];
-        if(P1IFG & mask)
+        if(BTN_IFG & mask)
         {
             BTN_IE &= ~mask;
             debounceFlags |= mask; // turn on debounce of btn
@@ -58,9 +49,11 @@ __interrupt void BtnInt(void)
 #pragma vector=TIMERB0_VECTOR
 __interrupt void Timer_B0(void)
 {
+	_EINT(); // umożliwiamy, by w tym czasie mógł odświeżać wyświetlacz(ryzykowne)
+
 	uint8_t hasToWakeUp = 0;
 	uint8_t i;
-	for(i = 0 ; i < BTN_N ; i++)
+	for(i = BTN_N-1 ; i > 0 ; i--)
 	{
 		uint8_t mask = buttonMasks[i];
 		if(debounceFlags & mask) // jesli trzeba debouncowac
@@ -91,28 +84,15 @@ __interrupt void Timer_B0(void)
 	if(hasToWakeUp)
 		_BIC_SR_IRQ(SLEEP_BITS);
 	if(!debounceFlags)	// nie licz juz wiecej
-		TBCCTL0 &= ~CCIE; // Turn off TACCR1
+		timerBTurnOff(); //TBCCTL0 = 0; // Turn off TBCCR0
 }
 
 uint8_t isButtonPressed(uint8_t buttonMask)
 {
-	TBCCTL0 = 0;
+	TBCCTL0 = 0; // sekcja krytyczna
 	uint8_t ret = (buttonEvents & buttonMask);
 	if(ret)
 		buttonEvents &= ~buttonMask;
 	TBCCTL0 = CCIE;
 	return ret;
-}
-
-inline void disableButtonsInt()
-{
-	btnIntState = TBCCTL0;
-	BTN_IE = 0;
-	TBCCTL0 &= ~CCIE;
-}
-
-inline void restoreButtonsInt()
-{
-	TBCCTL0 = btnIntState;
-	BTN_IE = BTN_ALL;
 }

@@ -15,7 +15,7 @@
 #define DISP_SEGS_DIR	P3DIR
 #define DISP_SEGS_OUT	P3OUT
 
-#define DISPLAY_TCCR	80//18431//9215//18431
+#define DISPLAY_TCCR	80//67(~480Hz)//40(~800Hz)
 
 void displayInit();
 void displaySetDigit(uint8_t digitNumber, uint8_t digitSegments);

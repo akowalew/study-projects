@@ -19,12 +19,18 @@
 #define GAME_BOOM			0xF8
 #define GAME_NONE			0xFF
 
+#define GAME_BUZZER_TCCR 4096
+#define GAME_BUZZER_DIR	P4DIR
+#define GAME_BUZZER_OUT	P4OUT
+#define GAME_BUZZER 0x01
+
 void gamePause();
 void gameResume();
 
 void gameBulletLeftAdd();
 void gameBulletRightAdd();
 void gameUpdate();
+void gameInit();
 
 uint8_t gameIsNextCycle();
 void gameGoNextCycle();

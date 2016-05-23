@@ -19,4 +19,3 @@
 #define SLEEP_BITS	LPM1_bits
 
 #endif /* HEADER_H_ */
-
