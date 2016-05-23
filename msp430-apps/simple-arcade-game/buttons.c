@@ -15,6 +15,8 @@ const uint8_t buttonMasks[BTN_N] = {BTN_LEFT, BTN_RIGHT};
 volatile uint8_t counts0[BTN_N];
 volatile uint8_t counts1[BTN_N];
 
+volatile uint8_t btnIntState;
+
 /**
  * 	kierunek : wejscie, przerwania, zbocze opadajace
  */
@@ -27,21 +29,6 @@ void initButtons()
 	if(BTN_IN & BTN_RIGHT)
 		buttonStates |= BTN_RIGHT;
 	BTN_IE |= ( BTN_RIGHT | BTN_LEFT) ;
-}
-
-inline uint8_t isDebouncingNow()
-{
-	return debounceFlags;
-}
-
-inline uint8_t isButtonEvent(uint8_t buttonMask)
-{
-	return (buttonEvents & buttonMask);
-}
-
-inline void clearButtonEvent(uint8_t buttonMask)
-{
-	buttonEvents &= ~buttonMask;
 }
 
 #pragma vector=BTN_VECTOR
@@ -113,11 +100,39 @@ __interrupt void Timer_A1(void)
 		if(!debounceFlags)	// nie licz juz wiecej
         {
 			TACCTL1 &= ~CCIE; // Turn off TACCR1
-			extern volatile uint8_t isDisplayEmpty;
-            if(isDisplayEmpty) // nothing to do at all
-                TACTL &= ~MC_2; // disable TimerA
+
+            if(displayIsRunning()) // nothing to do at all
+            	timerATurnOff();
         }
 
 		break;
 	}
+}
+
+inline uint8_t isDebouncingNow()
+{
+	return debounceFlags;
+}
+
+inline uint8_t isButtonEvent(uint8_t buttonMask)
+{
+	return (buttonEvents & buttonMask);
+}
+
+inline void clearButtonEvent(uint8_t buttonMask)
+{
+	buttonEvents &= ~buttonMask;
+}
+
+inline void disableButtonsInt()
+{
+	btnIntState = CCIE;
+	BTN_IE = 0;
+	TACCTL1 &= ~CCIE;
+}
+
+inline void restoreButtonsInt()
+{
+	TACCTL1 = btnIntState;
+	BTN_IE = BTN_ALL;
 }

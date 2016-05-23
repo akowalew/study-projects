@@ -8,12 +8,7 @@
 #ifndef BUTTONS_H_
 #define BUTTONS_H_
 
-#include <msp430.h>
-#include <signal.h>
-#include "buttons.h"
-typedef unsigned char uint8_t;
-typedef signed char int8_t;
-typedef unsigned short uint16_t ;
+#include "header.h"
 
 #define BTN_RIGHT	0x01
 #define BTN_LEFT	0x02
@@ -33,5 +28,8 @@ void initButtons();
 uint8_t isDebouncingNow();
 uint8_t isButtonEvent(uint8_t buttonMask);
 void clearButtonEvent(uint8_t buttonMask);
+
+void disableButtonsInt();
+void restoreButtonsInt();
 
 #endif /* BUTTONS_H_ */
