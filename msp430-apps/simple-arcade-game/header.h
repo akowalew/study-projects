@@ -16,6 +16,7 @@
 #define timerATurnOn() (TACTL |= MC_2)
 #define timerBTurnOn() (TBCTL |= MC_1)
 #define timerBTurnOff() (TBCTL &= ~MC_1)
+#define SLEEP_BITS	LPM1_bits
 
 #endif /* HEADER_H_ */
 

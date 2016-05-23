@@ -19,25 +19,26 @@ void initClock()
 
 void initTimers()
 {
-	/* 	TIMER_A
-		-	Odswiezanie wyswietlacza - 400Hz
-		-	Debounce - 1024Hz
+	/* 	TIMER_A ( Taktowanie 32768Hz )
+		-	Odswiezanie wyswietlacza -> 400Hz(~404,5Hz) : TACCR0 = 81 - 1
+		- 	Przesuwanie kursora -> 2Hz : 2^14 - 1
 
-		TIMER_B
-		-	Przesuwanie kursora - 2Hz
+		TIMER_B ( Taktowanie 32768Hz )
+		-	Debounce - 1024Hz : TACCR1 = 32 - 1
 	*/
-	// SMCLK, DIVIDER=1, CONTINUOUS, INT ENABLE
-	TACTL = (TASSEL_2 | ID_0 /* |  MC_2 */ );
+
+	// ACLK, DIVIDER=1, CONTINUOUS, INT ENABLE
+	TACTL = (TASSEL_1 | ID_0 /* |  MC_2 */ );
 	// NO CAPTURE, INT ENABLE
 	TACCTL0 =  0 /* CCIE */ ;
 	TACCR0 = DISPLAY_TCCR;
-	TACCTL1 = 0 /* CCIE */    ;
-	TACCR1 = DEBOUNCE_TCCR;
+	TACCTL1 = 0  /* CCIE */ ;
+	TACCR1 = GAME_SHIFT_TCCR;
 
 	// SMCLK, UP_MODE, INT ENABLE
 	TBCTL = (TBSSEL_1 /* | MC_1 */ );
 	TBCCTL0 = CCIE;
-	TBCCR0 = GAME_SHIFT_TCCR;
+	TBCCR0 = DEBOUNCE_TCCR;
 }
 
 int main(void) {
@@ -45,34 +46,26 @@ int main(void) {
     initClock();
     initTimers();
     displayInit();
-    initButtons();
+    buttonsInit();
     _EINT();
 
     uint8_t isGameChanged = 0;
     while(1)
     {
-    	_BIS_SR(LPM1_bits); // go sleep
+    	_BIS_SR(SLEEP_BITS); // go sleep
 
-        disableButtonsInt();
-    	if(isButtonEvent(BTN_LEFT))
-    	{
-    		clearButtonEvent(BTN_LEFT);
+    	isGameChanged = 1;
+    	if(isButtonPressed(BTN_LEFT))
     		gameBulletLeftAdd();
-    		isGameChanged = 1;
-    	}
-    	else if(isButtonEvent(BTN_RIGHT))
-    	{
-    		clearButtonEvent(BTN_RIGHT);
+    	else if(isButtonPressed(BTN_RIGHT))
     		gameBulletRightAdd();
-    		isGameChanged = 1;
-    	}
+    	else if(gameIsNextCycle())
+    		gameGoNextCycle();
     	else
     		isGameChanged = 0;
 
     	if(isGameChanged)
     		gameUpdate();
-
-    	restoreButtonsInt();
    }
 }
 

@@ -25,8 +25,8 @@ void gameResume();
 void gameBulletLeftAdd();
 void gameBulletRightAdd();
 void gameUpdate();
-uint8_t gameBoom();
-uint8_t gameLeft();
-uint8_t gameRight();
+
+uint8_t gameIsNextCycle();
+void gameGoNextCycle();
 
 #endif /* GAME_H_ */

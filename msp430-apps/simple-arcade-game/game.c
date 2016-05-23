@@ -10,9 +10,28 @@
 uint8_t leftGamer = 0, rightGamer = 0;
 uint8_t boomVar = 0;
 int8_t leftLastBulletPos = 7, rightLastBulletPos = 0;
-#pragma vector=TIMERB0_VECTOR
-__interrupt void Timer_B0(void)
+volatile uint8_t isTimerCycled = 0;
+
+#pragma vector=TIMERA1_VECTOR
+__interrupt void Timer_A1(void)
 {
+	switch(TAIV)
+	{
+	case 2:
+		TACCR1 += DEBOUNCE_TCCR;
+
+		isTimerCycled = 1;
+		_BIC_SR_IRQ(SLEEP_BITS); // wake up!
+		break;
+	}
+}
+
+void gameGoNextCycle()
+{
+	TACCTL1 = 0;
+	isTimerCycled = 0;
+	TACCTL1 = CCIE;
+
 	boomVar = 0;
 	uint8_t boomFlags = 0;
 
@@ -72,14 +91,10 @@ __interrupt void Timer_B0(void)
 			leftLastBulletPos++;
 		}
 	}
-
-    gameUpdate();
 }
 
 void gameUpdate()
 {
-	gamePause();
-
 	uint8_t i;
     uint8_t mask = 0x01;
 
@@ -98,26 +113,22 @@ void gameUpdate()
         mask <<= 1 ;
     }
 
-    _DINT();
     if(!(leftGamer || rightGamer || boomVar)) //nothing to display
     {
-    	displayTurnOff(); // turn off display refreshing
-        if(!isDebouncingNow())
-        	TACTL &= ~MC_2;
-        gamePause(); // no bullet to shift
+    	/* displayTurnOff(); // turn off display refreshing
+        gamePause(); // no bullet to shift */
+        timerATurnOff();
     }
     else
     {
-        displayTurnOn(); // turn on display refreshing
-        TACTL |= MC_2; // turn on timerA
-        gameResume(); // turn on shifting
+        /* displayTurnOn(); // turn on display refreshing
+        gameResume(); // turn on shifting */
+        timerATurnOn();
     }
-    _EINT();
-
-    gameResume();
 }
 
-inline void gameResume() { TBCTL |= MC_1; }
-inline void gamePause() { TBCTL &= ~MC_1; }
+inline void gameResume() { TACCTL1 = CCIE ; }
+inline void gamePause() { TACCTL1 = 0 ; }
 inline void gameBulletLeftAdd() { leftGamer |= 0x80; }
 inline void gameBulletRightAdd() { rightGamer |= 0x01; }
+inline uint8_t gameIsNextCycle() { return isTimerCycled ; }

@@ -15,7 +15,7 @@
 #define BTN_N	2
 #define BTN_ALL (BTN_RIGHT | BTN_LEFT)
 #define BOUNCE_SAMPLES_N    21
-#define DEBOUNCE_TCCR	7199
+#define DEBOUNCE_TCCR	31
 
 #define BTN_IN	P1IN
 #define BTN_DIR	P1DIR
@@ -24,10 +24,8 @@
 #define BTN_IFG	P1IFG
 #define BTN_VECTOR	PORT1_VECTOR
 
-void initButtons();
-uint8_t isDebouncingNow();
-uint8_t isButtonEvent(uint8_t buttonMask);
-void clearButtonEvent(uint8_t buttonMask);
+void buttonsInit();
+uint8_t isButtonPressed(uint8_t buttonMask);
 
 void disableButtonsInt();
 void restoreButtonsInt();
