@@ -10,27 +10,17 @@
 
 typedef unsigned char uint8_t;
 typedef signed char int8_t;
+typedef unsigned short uint16_t ;
 
-#define BTN_RIGHT	0x01
-#define BTN_LEFT	0x02
-#define BTN_N	2
-#define BTN_ALL (BTN_RIGHT | BTN_LEFT)
-#define BOUNCE_SAMPLES_N    323
+#include "buttons.h"
 
-#define BTN_IN	P1IN
-#define BTN_DIR	P1DIR
-#define BTN_IE	P1IE
-#define BTN_IES	P1IES
-#define BTN_IFG	P1IFG
-#define BTN_VECTOR	PORT1_VECTOR
-
-#define DISP_DIGITS_DIR	P2DIR
-#define DISP_DIGITS_OUT	P2OUT
+#define DISP_DIGITS_DIR	P4DIR
+#define DISP_DIGITS_OUT	P4OUT
 #define DISP_SEGS_DIR	P3DIR
 #define DISP_SEGS_OUT	P3OUT
 
-#define DISPLAY_TCCR	9215//18431
-#define DEBOUNCE_TCCR	7199
+#define DISPLAY_TCCR	18431//18431//9215//18431
+
 #define GAME_SHIFT_TCCR	16383
 
 #define GAME_BULLET_LEFT	0xFB
@@ -50,3 +40,4 @@ void initClock();
 void initDisplay();
 
 #endif /* HEADER_H_ */
+
