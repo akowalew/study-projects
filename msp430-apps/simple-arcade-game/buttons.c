@@ -29,7 +29,7 @@ __interrupt void BtnInt(void)
 
     uint8_t mask;
     int8_t i = BTN_N-1;
-    for(i = BTN_N-1 ; i > 0 ; i--)
+    for(i = BTN_N-1 ; i >= 0 ; i--)
     {
         mask = buttonMasks[i];
         if(BTN_IFG & mask)
@@ -49,11 +49,12 @@ __interrupt void BtnInt(void)
 #pragma vector=TIMERB0_VECTOR
 __interrupt void Timer_B0(void)
 {
+	TBCCTL0 = 0;
 	_EINT(); // umożliwiamy, by w tym czasie mógł odświeżać wyświetlacz(ryzykowne)
 
 	uint8_t hasToWakeUp = 0;
-	uint8_t i;
-	for(i = BTN_N-1 ; i > 0 ; i--)
+	int8_t i;
+	for(i = BTN_N-1 ; i >= 0 ; i--)
 	{
 		uint8_t mask = buttonMasks[i];
 		if(debounceFlags & mask) // jesli trzeba debouncowac
@@ -75,7 +76,10 @@ __interrupt void Timer_B0(void)
 				else if( (!(buttonStates & mask)) && (counts1[i] > counts0[i]) )
 					buttonStates |= mask;
 
+				_DINT();
 				BTN_IE |= mask; // przywroc przerwania przycisku
+				_EINT();
+
 				counts0[i] = counts1[i] = 0;
 			}
 		}
@@ -85,6 +89,8 @@ __interrupt void Timer_B0(void)
 		_BIC_SR_IRQ(SLEEP_BITS);
 	if(!debounceFlags)	// nie licz juz wiecej
 		timerBTurnOff(); //TBCCTL0 = 0; // Turn off TBCCR0
+
+	TBCCTL0 = CCIE;
 }
 
 uint8_t isButtonPressed(uint8_t buttonMask)

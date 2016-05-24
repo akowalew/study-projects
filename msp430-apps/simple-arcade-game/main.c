@@ -28,9 +28,9 @@ void initTimers()
 	// ACLK, DIVIDER=1, CONTINUOUS, INT ENABLE
 	TACTL = (TASSEL_1 | ID_0 /* |  MC_2 */ );
 	// NO CAPTURE, INT ENABLE
-	TACCTL0 =  0 /* CCIE */ ;
+	TACCTL0 =  CCIE /* CCIE */ ;
 	TACCR0 = DISPLAY_TCCR;
-	TACCTL1 = 0  /* CCIE */ ;
+	TACCTL1 = CCIE  /* CCIE */ ;
 	TACCR1 = GAME_SHIFT_TCCR;
 
 	// SMCLK, UP_MODE, INT ENABLE
@@ -48,23 +48,33 @@ int main(void) {
     gameInit();
     _EINT();
 
-    uint8_t isGameChanged = 0;
+    uint8_t isGameChanged;
     while(1)
     {
     	_BIS_SR(SLEEP_BITS); // go sleep
 
-    	isGameChanged = 1;
-    	if(isButtonPressed(BTN_LEFT))
-    		gameBulletLeftAdd();
-    	else if(isButtonPressed(BTN_RIGHT))
-    		gameBulletRightAdd();
-    	else if(gameIsNextCycle())
-    		gameGoNextCycle();
-    	else
-    		isGameChanged = 0;
+    	while(1)
+    	{
+			isGameChanged = 0;
+			if(isButtonPressed(BTN_LEFT))
+				if(gameBulletLeftAdd())
+					isGameChanged = 1;
 
-    	if(isGameChanged)
-    		gameUpdate();
+			if(isButtonPressed(BTN_RIGHT))
+				if(gameBulletRightAdd())
+					isGameChanged = 1;
+
+			if(gameIsNextCycle())
+			{
+				gameGoNextCycle();
+				isGameChanged = 1;
+			}
+
+			if(isGameChanged)
+				gameUpdate();
+			else
+				break;
+    	}
    }
 }
 

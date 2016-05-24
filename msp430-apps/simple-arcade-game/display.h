@@ -10,8 +10,8 @@
 
 #include "header.h"
 
-#define DISP_DIGITS_DIR	P4DIR
-#define DISP_DIGITS_OUT	P4OUT
+#define DISP_DIGITS_DIR	P2DIR
+#define DISP_DIGITS_OUT	P2OUT
 #define DISP_SEGS_DIR	P3DIR
 #define DISP_SEGS_OUT	P3OUT
 
@@ -19,5 +19,6 @@
 
 void displayInit();
 void displaySetDigit(uint8_t digitNumber, uint8_t digitSegments);
+void turnOffDisplay();
 
 #endif /* DISPLAY_H_ */

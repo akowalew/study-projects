@@ -4,17 +4,16 @@
  *  Created on: May 23, 2016
  *      Author: student
  */
-
 #ifndef BUTTONS_H_
 #define BUTTONS_H_
 
 #include "header.h"
 
 #define BTN_RIGHT	0x01
-#define BTN_LEFT	0x02
+#define BTN_LEFT	0x80
 #define BTN_N	2
 #define BTN_ALL (BTN_RIGHT | BTN_LEFT)
-#define BOUNCE_SAMPLES_N    31
+#define BOUNCE_SAMPLES_N    25
 #define DEBOUNCE_TCCR	31
 
 #define BTN_IN	P1IN

@@ -17,9 +17,9 @@ __interrupt void Timer_A0(void) // Przerwanie TACCR0, Odswiezanie wyswietlacza
 {
 	TACCR0 += DISPLAY_TCCR;
 
-	DISP_SEGS_OUT = 0xFF; // turn of segs
-	DISP_DIGITS_OUT = ~digitMask; // change digit
-	DISP_SEGS_OUT = *(outSegsPtr++); // set correct segs
+	DISP_DIGITS_OUT = 0xFF;
+	DISP_SEGS_OUT = *(outSegsPtr++);
+	DISP_DIGITS_OUT = ~digitMask;
 
 	digitMask <<= 1;
 	if(digitMask == 0)
@@ -40,4 +40,10 @@ void displayInit()
 inline void displaySetDigit(uint8_t digitNumber, uint8_t digitSegments)
 {
 	displayArray[digitNumber] = digitSegments;
+}
+
+inline void turnOffDisplay()
+{
+	DISP_SEGS_OUT = 0xFF;
+	DISP_DIGITS_OUT = 0xFF;
 }

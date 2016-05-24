@@ -11,22 +11,24 @@ uint8_t leftGamer, rightGamer;
 uint8_t boomVar;
 int8_t leftLastBulletPos, rightLastBulletPos;
 volatile uint8_t isTimerCycled;
+volatile uint8_t isBuzzerBuzzing;
 
 #pragma vector=TIMERA1_VECTOR
 __interrupt void Timer_A1(void)
 {
 	switch(TAIV)
 	{
-	case 2: // Game next cycle (shift) int
+	case 4: // Game next cycle (shift) int
+		GAME_BUZZER_OUT &= ~GAME_BUZZER;
+		TACCTL2 = 0; // only one int
+		TACCR2 = 0;
+		isBuzzerBuzzing = 0;
+		break;
+	case 2: // Buzzer timeout int
 		TACCR1 += GAME_SHIFT_TCCR;
 
 		isTimerCycled = 1;
 		_BIC_SR_IRQ(SLEEP_BITS); // wake up!
-
-		break;
-	case 4: // Buzzer timeout int
-		TACCTL2 = 0; // only one int
-		GAME_BUZZER_OUT &= ~GAME_BUZZER;
 
 		break;
 	}
@@ -39,6 +41,9 @@ void gameGoNextCycle()
 	TACCTL1 = CCIE;
 
 	boomVar = 0;
+	if((!rightGamer) && (!leftGamer))
+		return; // nothing to do
+
 	uint8_t boomFlags = 0;
 	if(rightGamer)
 	{
@@ -100,7 +105,7 @@ void gameGoNextCycle()
 
 void gameUpdate()
 {
-	uint8_t i, mask = 0x01, outSegs;
+	uint8_t i = 0, mask = 0x01, outSegs;
     while(mask)
     {
 	    if(boomVar & mask)
@@ -121,13 +126,18 @@ void gameUpdate()
     	uint16_t timerVal = TAR;
     	while(timerVal != TAR)
     		timerVal = TAR;
+    	TACCTL2 = 0;
+       	TACCR2 = timerVal + GAME_BUZZER_TCCR;
     	GAME_BUZZER_OUT |= GAME_BUZZER;
-    	TACCR2 += GAME_BUZZER_TCCR;
+    	isBuzzerBuzzing = 1;
     	TACCTL2 = CCIE;
     }
 
-    if(!(leftGamer || rightGamer || boomVar)) //nothing to display
+    if(!(leftGamer || rightGamer || boomVar || isBuzzerBuzzing)) //nothing to display
+    {
         timerATurnOff(); // in this : turnOffDisplay, gamePause
+        turnOffDisplay();
+    }
     else
         timerATurnOn(); // in this: turnOnDisplay, gameResume
 }
@@ -144,6 +154,25 @@ void gameInit()
 
 inline void gameResume() { TACCTL1 = CCIE ; }
 inline void gamePause() { TACCTL1 = 0 ; }
-inline void gameBulletLeftAdd() { leftGamer |= 0x80; }
-inline void gameBulletRightAdd() { rightGamer |= 0x01; }
+uint8_t gameBulletLeftAdd()
+{
+	if(leftGamer & 0x80)
+		return 0;
+	else
+	{
+		leftGamer |= 0x80;
+		return 1;
+	}
+}
+
+uint8_t gameBulletRightAdd()
+{
+	if(rightGamer & 0x01)
+		return 0;
+	else
+	{
+		rightGamer |= 0x01;
+		return 1;
+	}
+}
 inline uint8_t gameIsNextCycle() { return isTimerCycled; }
