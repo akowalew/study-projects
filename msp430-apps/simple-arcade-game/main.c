@@ -22,7 +22,7 @@ void initTimers()
 {
 	/* 	TIMER_A ( Taktowanie 32768Hz )
 		-	Odswiezanie wyswietlacza -> 400Hz(~404,5Hz) : TACCR0 = 81 - 1
-		- 	Przesuwanie kursora -> 2Hz : 2^14 - 1
+		- 	Przesuwanie kursora -> 8Hz : 4096 - 1
 		TIMER_B ( Taktowanie 32768Hz )
 		-	Debounce - 1024Hz : TACCR1 = 32 - 1
 	*/
@@ -53,7 +53,6 @@ int main(void) {
     while(1)
     {
     	_BIS_SR(SLEEP_BITS); // go sleep
-
     	while(1)
     	{
 			isGameChanged = 0;
