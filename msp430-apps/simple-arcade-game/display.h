@@ -19,6 +19,6 @@
 
 void displayInit();
 void displaySetDigit(uint8_t digitNumber, uint8_t digitSegments);
-void turnOffDisplay();
+void displayTurnOff();
 
 #endif /* DISPLAY_H_ */

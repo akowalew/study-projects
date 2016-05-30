@@ -28,7 +28,7 @@ __interrupt void BtnInt(void)
 	timerBTurnOn(); // also : TBCCTL0 = CCIE; // turn on debunce compare int
 
     uint8_t mask;
-    int8_t i = BTN_N-1;
+    int8_t i;
     for(i = BTN_N-1 ; i >= 0 ; i--)
     {
         mask = buttonMasks[i];
@@ -52,11 +52,11 @@ __interrupt void Timer_B0(void)
 	TBCCTL0 = 0;
 	_EINT(); // umożliwiamy, by w tym czasie mógł odświeżać wyświetlacz(ryzykowne)
 
-	uint8_t hasToWakeUp = 0;
+	uint8_t btnIEVal, hasToWakeUp = 0, mask;
 	int8_t i;
 	for(i = BTN_N-1 ; i >= 0 ; i--)
 	{
-		uint8_t mask = buttonMasks[i];
+		mask = buttonMasks[i];
 		if(debounceFlags & mask) // jesli trzeba debouncowac
 		{
 			if(BTN_IN & mask) // pobieramy probke
@@ -66,7 +66,6 @@ __interrupt void Timer_B0(void)
 
 			if((counts0[i] > BOUNCE_SAMPLES_N/2) || (counts1[i] > BOUNCE_SAMPLES_N/2))
 			{
-				debounceFlags &= ~mask; // konczymy debouncowanie
 				if((buttonStates & mask) && (counts0[i] > counts1[i]))
 				{
 					buttonStates &= ~mask; // nacisniecie przycisku
@@ -76,9 +75,10 @@ __interrupt void Timer_B0(void)
 				else if( (!(buttonStates & mask)) && (counts1[i] > counts0[i]) )
 					buttonStates |= mask;
 
-				_DINT();
-				BTN_IE |= mask; // przywroc przerwania przycisku
-				_EINT();
+				btnIEVal = BTN_IE; // sekcja krytyczna
+				BTN_IE = 0;
+				debounceFlags &= ~mask; // konczymy debouncowanie
+				BTN_IE = (mask | btnIEVal) ; // poprzednie przyciski plus zdebouncowany
 
 				counts0[i] = counts1[i] = 0;
 			}
@@ -88,7 +88,10 @@ __interrupt void Timer_B0(void)
 	if(hasToWakeUp)
 		_BIC_SR_IRQ(SLEEP_BITS);
 	if(!debounceFlags)	// nie licz juz wiecej
+	{
 		timerBTurnOff(); //TBCCTL0 = 0; // Turn off TBCCR0
+		TBR = 0; // reset timer B value
+	}
 
 	TBCCTL0 = CCIE;
 }
@@ -98,7 +101,7 @@ uint8_t isButtonPressed(uint8_t buttonMask)
 	TBCCTL0 = 0; // sekcja krytyczna
 	uint8_t ret = (buttonEvents & buttonMask);
 	if(ret)
-		buttonEvents &= ~buttonMask;
+		buttonEvents &= ~buttonMask; // clear event, button is read.
 	TBCCTL0 = CCIE;
 	return ret;
 }

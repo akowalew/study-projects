@@ -4,7 +4,6 @@
  *  Created on: 23 maj 2016
  *      Author: dicker
  */
-
 #include "game.h"
 
 uint8_t leftGamer, rightGamer;
@@ -18,17 +17,17 @@ __interrupt void Timer_A1(void)
 {
 	switch(TAIV)
 	{
-	case 4: // Game next cycle (shift) int
-		GAME_BUZZER_OUT &= ~GAME_BUZZER;
-		TACCTL2 = 0; // only one int
-		TACCR2 = 0;
-		isBuzzerBuzzing = 0;
-		break;
 	case 2: // Buzzer timeout int
 		TACCR1 += GAME_SHIFT_TCCR;
 
 		isTimerCycled = 1;
 		_BIC_SR_IRQ(SLEEP_BITS); // wake up!
+
+		break;
+	case 4: // Game next cycle (shift) int
+		GAME_BUZZER_OUT &= ~GAME_BUZZER;
+		TACCTL2 = 0; // only one int
+		isBuzzerBuzzing = 0;
 
 		break;
 	}
@@ -124,8 +123,9 @@ void gameUpdate()
     if(boomVar) // we have to turn once the buzzer!
     {
     	uint16_t timerVal = TAR;
-    	while(timerVal != TAR)
+    	while(timerVal != TAR) // get stable value of TAR
     		timerVal = TAR;
+
     	TACCTL2 = 0;
        	TACCR2 = timerVal + GAME_BUZZER_TCCR;
     	GAME_BUZZER_OUT |= GAME_BUZZER;
@@ -135,8 +135,8 @@ void gameUpdate()
 
     if(!(leftGamer || rightGamer || boomVar || isBuzzerBuzzing)) //nothing to display
     {
-        timerATurnOff(); // in this : turnOffDisplay, gamePause
-        turnOffDisplay();
+        timerATurnOff();
+        displayTurnOff();
     }
     else
         timerATurnOn(); // in this: turnOnDisplay, gameResume
@@ -152,8 +152,7 @@ void gameInit()
 	isTimerCycled = 0;
 }
 
-inline void gameResume() { TACCTL1 = CCIE ; }
-inline void gamePause() { TACCTL1 = 0 ; }
+
 uint8_t gameBulletLeftAdd()
 {
 	if(leftGamer & 0x80)
@@ -175,4 +174,7 @@ uint8_t gameBulletRightAdd()
 		return 1;
 	}
 }
+
 inline uint8_t gameIsNextCycle() { return isTimerCycled; }
+inline void gameResume() { TACCTL1 = CCIE ; }
+inline void gamePause() { TACCTL1 = 0 ; }

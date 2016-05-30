@@ -9,12 +9,12 @@
 
 #include "header.h"
 
-#define BTN_RIGHT	0x01
-#define BTN_LEFT	0x80
+#define BTN_RIGHT 0x01
+#define BTN_LEFT 0x80
 #define BTN_N	2
 #define BTN_ALL (BTN_RIGHT | BTN_LEFT)
-#define BOUNCE_SAMPLES_N    25
-#define DEBOUNCE_TCCR	31
+#define BOUNCE_SAMPLES_N 25
+#define DEBOUNCE_TCCR 31
 
 #define BTN_IN	P1IN
 #define BTN_DIR	P1DIR
