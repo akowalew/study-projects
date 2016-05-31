@@ -1,4 +1,4 @@
-# WR
+# lego-ftl-robot
 
 Projekt na przedmiot Wstęp do Robotyki.
 
