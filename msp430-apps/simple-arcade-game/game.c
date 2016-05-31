@@ -138,16 +138,13 @@ void gameUpdate()
         timerATurnOff();
         displayTurnOff();
     }
-    else
-    {
-        if(!timerAIsRunning())
-		{
-        	uint16_t timerVal = TAR; // timer is powered down - only one read
-            TACCR0 = TAR + DISPLAY_TCCR; // correct compare registers
-            TACCR1 = TAR + GAME_SHIFT_TCCR;
-            timerATurnOn();
-		}
-    }
+    else if(!timerAIsRunning())
+	{
+		uint16_t timerVal = TAR; // timer is powered down - only one read
+		TACCR0 = TAR + DISPLAY_TCCR; // correct compare registers
+		TACCR1 = TAR + GAME_SHIFT_TCCR;
+		timerATurnOn();
+	}
 }
 
 void gameInit()
