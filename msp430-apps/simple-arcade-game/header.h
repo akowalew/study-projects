@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <signal.h>
 
+#define timerAIsRunning() (TACTL & MC_2)
 #define timerATurnOff() (TACTL &= ~MC_2)
 #define timerATurnOn() (TACTL |= MC_2)
 #define timerBTurnOn() (TBCTL |= MC_1)
