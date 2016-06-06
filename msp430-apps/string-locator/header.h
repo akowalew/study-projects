@@ -31,6 +31,6 @@ extern uint8_t textX;
 extern uint8_t textY;
 extern char textStr[DISPLAY_WIDTH+1];
 extern int8_t textLen;
-extern char textVtPos[10];
+extern const char textDefaultVtPos[10];
 
 #endif /* HEADER_H_ */

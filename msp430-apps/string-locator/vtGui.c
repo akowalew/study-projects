@@ -50,8 +50,9 @@ inline void guiDrawDisplayBox()
 
 void guiDisplayAll()
 {
-	usartSendStr(VT_CLR_SCR);
+	usartSendStr(VT_RESET);
 	usartSendStr(VT_HOME);
+	usartSendStr(VT_CURSOR_OFF);
 
 	const char * const beginString =
 			"Hi, here you can configure\r\n"
@@ -69,7 +70,8 @@ void guiDisplayAll()
 	guiDrawDisplayBox();
 
 	// place current text in the box
-	usartSendStr(textVtPos); // vtSetCursor(currTextX, currTextY);
+	usartSendStr(textDefaultVtPos); // vtSetCursor(currTextX, currTextY);
+	usartSendStr(VT_CURSOR_SAVE);
 	usartSendStr(textStr);
 }
 

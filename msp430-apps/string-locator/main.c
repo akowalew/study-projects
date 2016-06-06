@@ -9,7 +9,7 @@ char textStr[DISPLAY_WIDTH+1] = { '<', 's', 'a', 'm', 'p', 'l', 'e', '>', '\0' }
 int8_t textLen = 8;
 uint8_t textX = (DISPLAY_X + (DISPLAY_WIDTH/2) - (8/2)); // 2+10-8=4
 uint8_t textY = (DISPLAY_Y + (DISPLAY_HEIGHT/2) - (1/2)); // 15
-char textVtPos[10] = "\x1b[4;15";
+const char textDefaultVtPos[10] = "\x1b[4;15";
 
 const ModeKey modeKeys[] = {
 		 '1', enterInsertMode ,
@@ -50,28 +50,18 @@ int main(void) {
 	_EINT();
     while(1)
     {
-    	usartRxDint();
-    	if(!usartIsCharAvailable())
-    	{
-    		usartRxEint();
-    		goSleepEint();
-    	}
-    	else
-    	{
-    		rxData = usartGetChar();
-    		usartRxEint();
+    	rxData = usartGetCharBlock();
 
-    		for(i = MODE_KEYS_N ; i > 0 ; i--)
-    			if(rxData == modeKeys[(uint8_t)i].key)
-    				break;
-    		if(i == -1)
-    			guiSetError("WRONG KEY");
-    		else
-    		{
-    			if(guiWasError()) // jeśli poprzednio źle wklepano
-    				guiClearError(); // skasuj czerwony napis na dole
-    			modeKeys[(uint8_t)i].keyFunction();
-    		}
-    	}
+		for(i = MODE_KEYS_N ; i > 0 ; i--)
+			if(rxData == modeKeys[(uint8_t)i].key)
+				break;
+		if(i == -1)
+			guiSetError("WRONG KEY");
+		else
+		{
+			if(guiWasError()) // jeśli poprzednio źle wklepano
+				guiClearError(); // skasuj czerwony napis na dole
+			modeKeys[(uint8_t)i].keyFunction();
+		}
     }
 }

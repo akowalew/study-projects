@@ -11,16 +11,30 @@ volatile uint8_t txArray[USART_TX_BUFF_SZ];
 volatile CBuffer rxBuff;
 volatile CBuffer txBuff;
 volatile uint8_t isTxWaiting = 0;
+volatile uint8_t isRxWaiting = 0;
 
  uint8_t usartIsCharAvailable()
 {
 	return (!cbufIsEmpty(&rxBuff));
 }
 
-inline uint8_t usartGetChar()
+inline uint8_t usartGetCharBlock()
 {
 	uint8_t ret ;
 	usartRxDint();
+
+	if(!usartIsCharAvailable())
+	{
+		__disable_interrupt();
+		usartRxEint();
+		isRxWaiting = 1;
+		do
+		{
+			goSleepEint();
+		}while(isRxWaiting);
+		usartRxDint();
+	}
+
 	ret = cbufPop(&rxBuff);
 	usartRxEint();
 	return ret;
@@ -36,7 +50,9 @@ void usartSendChr(const char data)
 		__disable_interrupt();
 		usartTxEint();
 		isTxWaiting = 1;
-		goSleepEint(); // wait for at least 1 char
+		do {
+			goSleepEint(); // wait for at least 1 char
+		} while(isTxWaiting);
 		usartTxDint();
 	}
 	cbufPush(&txBuff, data);
@@ -59,7 +75,9 @@ __inline__ void usartSendStr(const char * data)
 			__disable_interrupt();
 			usartTxEint();
 			isTxWaiting = 1;
-			goSleepEint();
+			do {
+				goSleepEint();
+			} while(isTxWaiting);
 			usartTxDint();
 		}
 		else

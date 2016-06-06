@@ -27,11 +27,10 @@
 extern const char * const WRONG_KEY_ERR;
 
 void guiDisplayAll();
+
 uint8_t guiWasError();
 void guiSetError(const char * const);
-
 void guiFatalError(const char * const);
-
 void guiClearError();
 
 #endif /* VTGUI_H_ */

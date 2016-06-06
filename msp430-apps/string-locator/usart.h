@@ -13,7 +13,7 @@
 #include "cbuffer.h"
 
 uint8_t usartIsCharAvailable();
-uint8_t usartGetChar();
+uint8_t usartGetCharBlock();
 void usartSendChr(const char data);
 void usartSendStr(const char * const data);
 void initUsart();

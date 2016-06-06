@@ -2,7 +2,8 @@
 
 const char* const VT_CLR_LN = "\x1b[2K";
 const char* const VT_CLR_SCR = "\x1b[2J";
-const char* const VT_CLR_RESET = "\x1b" "c";
+const char* const VT_RESET = "\x1b" "c";
+const char* const VT_CLR_CHR = "\b \b";
 
 const char* const VT_HOME =	"\x1b[H";
 const char* const VT_CURSOR_OFF = "\x1b[?25l";

@@ -16,6 +16,8 @@ void vtSetCursor(uint8_t x, uint8_t y);
 extern const char* const VT_CLR_LN ;
 extern const char* const VT_CLR_SCR;
 extern const char* const VT_CLEAR_ALL ; // clear screen and attributes, hide cursor, go to home
+extern const char* const VT_RESET;
+extern const char* const VT_CLR_CHR ; // Clear previous character (backspace)
 
 extern const char* const VT_HOME;
 extern const char* const VT_CURSOR_OFF;
