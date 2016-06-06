@@ -7,9 +7,13 @@
 
 char textStr[DISPLAY_WIDTH+1] = { '<', 's', 'a', 'm', 'p', 'l', 'e', '>', '\0' };
 int8_t textLen = 8;
-uint8_t textX = (DISPLAY_X + (DISPLAY_WIDTH/2) - (8/2)); // 2+10-8=4
-uint8_t textY = (DISPLAY_Y + (DISPLAY_HEIGHT/2) - (1/2)); // 15
-const char textDefaultVtPos[10] = "\x1b[4;15";
+
+#define TEXT_DEFAULT_X DISPLAY_X
+#define TEXT_DEFAULT_Y DISPLAY_Y
+
+uint8_t textX = TEXT_DEFAULT_X;
+uint8_t textY = TEXT_DEFAULT_Y;
+const char textDefaultVtPos[10] = "\x1b[13;2H";
 
 const ModeKey modeKeys[] = {
 		 '1', enterInsertMode ,
@@ -41,18 +45,18 @@ static inline void initProgram()
 }
 
 int main(void) {
+	P1DIR = 0xFF;
 	initProgram();
+	__enable_interrupt();
+
 	guiDisplayAll();
-	usartRxEint();
+
 	uint8_t rxData;
 	int8_t i;
-
-	_EINT();
     while(1)
     {
     	rxData = usartGetCharBlock();
-
-		for(i = MODE_KEYS_N ; i > 0 ; i--)
+		for(i = MODE_KEYS_N-1 ; i >= 0 ; i--)
 			if(rxData == modeKeys[(uint8_t)i].key)
 				break;
 		if(i == -1)

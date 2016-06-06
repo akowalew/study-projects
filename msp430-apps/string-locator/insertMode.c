@@ -14,7 +14,8 @@ inline void strcpy(char *dest, const char *src)
 void enterInsertMode()
 {
 	usartSendStr(VT_CURSOR_RESTORE); // FIRST, PLACE CURSOR AT THE END OF STRING
-	for(uint8_t i = textLen ; i > 0 ; i--)
+	uint8_t i;
+	for(i = textLen ; i > 0 ; i--)
 		usartSendStr(VT_CURSOR_RIGHT);
 
 	usartSendStr(VT_CURSOR_ON);
@@ -23,6 +24,7 @@ void enterInsertMode()
 	{
 		rxData = usartGetCharBlock();
 
+		guiClearError();
 		if((rxData >= 0x20) && (rxData <= 0x7E)) // All printable chars (with space)
 		{
 			if( (textX + textLen) == (DISPLAY_WIDTH + DISPLAY_X) ) // dalej nie mozemy
@@ -45,7 +47,7 @@ void enterInsertMode()
 		}
 		else if(rxData == VT_KEY_ENTER)
 		{
-			// save configuration
+			textStr[textLen] = '\0';
 			usartSendStr(VT_CURSOR_OFF);
 			return;
 		}

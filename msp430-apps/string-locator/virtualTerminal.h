@@ -35,9 +35,11 @@ extern const char* const VT_SET_RED_FG;
 extern const char* const VT_SET_CYAN_FG;
 extern const char* const VT_CLR_RESET;
 
+extern const char* const VT_SET_GREEN ;
+
 #define VT_KEY_ESC 0x1B
 #define VT_KEY_CTRL_R 0x12
 #define VT_KEY_ENTER 0x0D
-#define VT_KEY_BACKSPACE 0x08
+#define VT_KEY_BACKSPACE 127
 
 #endif /* VT100_ */

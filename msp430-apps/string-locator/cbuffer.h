@@ -15,9 +15,9 @@
 #define CB_FULL 0x02
 typedef struct
 {
-	uint8_t head;
-	uint8_t tail;
-	uint8_t flags;
+	volatile uint8_t head;
+	volatile uint8_t tail;
+	volatile uint8_t flags;
 	volatile uint8_t *buffer;
 	uint8_t SZ;
 } CBuffer ;

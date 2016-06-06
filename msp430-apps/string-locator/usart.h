@@ -23,7 +23,7 @@ void usartRxDint();
 void usartTxEint();
 void usartTxDint();
 
-#define USART_RX_BUFF_SZ 64
-#define USART_TX_BUFF_SZ 64
+#define USART_RX_BUFF_SZ 128
+#define USART_TX_BUFF_SZ 128
 
 #endif /* USART_H_ */

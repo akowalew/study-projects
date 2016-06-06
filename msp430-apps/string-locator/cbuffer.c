@@ -23,10 +23,9 @@ inline void cbufPush(volatile CBuffer *cbuf, uint8_t data)
     cbuf->buffer[cbuf->head] = data;
     cbuf->head = (cbuf->head + 1) & (cbuf->SZ-1);
 
+    cbuf->flags &= ~CB_EMPTY;
     if(cbuf->head==cbuf->tail)
     	cbuf->flags |= CB_FULL;
-    else
-    	cbuf->flags &= ~CB_FULL;
 }
 
 
@@ -35,10 +34,9 @@ inline uint8_t cbufPop(volatile CBuffer *cbuf)
     uint8_t x = cbuf->buffer[cbuf->tail];
     cbuf->tail = (cbuf->tail + 1) & (cbuf->SZ-1);
 
+    cbuf->flags &= ~CB_FULL;
     if(cbuf->tail == cbuf->head)
     	cbuf->flags |= CB_EMPTY;
-    else
-    	cbuf->flags &= ~CB_EMPTY;
 
     return x;
 }
@@ -46,7 +44,7 @@ inline uint8_t cbufPop(volatile CBuffer *cbuf)
 
 inline uint8_t cbufIsFull(volatile CBuffer *cbuf)
 {
-	return cbuf->flags & CB_FULL ;
+	return (cbuf->flags & CB_FULL) ;
 }
 
 

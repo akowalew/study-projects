@@ -21,11 +21,11 @@ typedef struct
 	F_PTR keyFunction;
 } ModeKey ;
 
-#define goSleepEint() (_BIS_SR(LPM0_bits | GIE))
+#define goSleep() (_BIS_SR(LPM0_bits))
 #define wakeUp() (_BIC_SR_IRQ(LPM0_bits))
 
-#define DISPLAY_WIDTH 21
-#define DISPLAY_HEIGHT 5
+#define DISPLAY_WIDTH 31
+#define DISPLAY_HEIGHT 7
 
 extern uint8_t textX;
 extern uint8_t textY;

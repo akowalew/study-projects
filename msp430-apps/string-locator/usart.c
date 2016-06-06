@@ -13,7 +13,7 @@ volatile CBuffer txBuff;
 volatile uint8_t isTxWaiting = 0;
 volatile uint8_t isRxWaiting = 0;
 
- uint8_t usartIsCharAvailable()
+uint8_t usartIsCharAvailable()
 {
 	return (!cbufIsEmpty(&rxBuff));
 }
@@ -22,19 +22,14 @@ inline uint8_t usartGetCharBlock()
 {
 	uint8_t ret ;
 	usartRxDint();
-
-	if(!usartIsCharAvailable())
+	if(cbufIsEmpty(&rxBuff))
 	{
-		__disable_interrupt();
-		usartRxEint();
 		isRxWaiting = 1;
-		do
-		{
-			goSleepEint();
-		}while(isRxWaiting);
+		usartRxEint();
+		while(isRxWaiting)
+			goSleep();
 		usartRxDint();
 	}
-
 	ret = cbufPop(&rxBuff);
 	usartRxEint();
 	return ret;
@@ -43,23 +38,22 @@ inline uint8_t usartGetCharBlock()
 void usartSendChr(const char data)
 {
 	usartTxDint();
-	if(cbufIsEmpty(&txBuff));
-			IFG1 |= UTXIFG0; // force TX ISR on
+	if(cbufIsEmpty(&txBuff))
+		IFG1 |= UTXIFG0; // force TX ISR on
 	if(cbufIsFull(&txBuff))
 	{
-		__disable_interrupt();
-		usartTxEint();
 		isTxWaiting = 1;
-		do {
-			goSleepEint(); // wait for at least 1 char
-		} while(isTxWaiting);
+		usartTxEint();
+		while(isTxWaiting) {
+			goSleep(); // wait for at least 1 char
+		}
 		usartTxDint();
 	}
 	cbufPush(&txBuff, data);
 	usartTxEint();
 }
 
-__inline__ void usartSendStr(const char * data)
+void usartSendStr(const char * data)
 {
 	// BLOCKING
 	// wait for available buffer space
@@ -72,16 +66,15 @@ __inline__ void usartSendStr(const char * data)
 	{
 		if(cbufIsFull(&txBuff))
 		{
-			__disable_interrupt();
-			usartTxEint();
 			isTxWaiting = 1;
-			do {
-				goSleepEint();
-			} while(isTxWaiting);
+			usartTxEint();
+			while(isTxWaiting) {
+				goSleep();
+			}
 			usartTxDint();
 		}
-		else
-			cbufPush(&txBuff, c);
+
+		cbufPush(&txBuff, c);
 	}
 	usartTxEint();
 }
@@ -89,9 +82,9 @@ __inline__ void usartSendStr(const char * data)
 #pragma vector=USART0TX_VECTOR
 __interrupt void usartTxIsr()
 {
-	U0TXBUF = cbufPop(&txBuff);
 	if(cbufIsEmpty(&txBuff))
-		usartTxDint();
+		return;
+	U0TXBUF = cbufPop(&txBuff);
 	if(isTxWaiting)
 	{
 		isTxWaiting = 0;
@@ -102,12 +95,16 @@ __interrupt void usartTxIsr()
 #pragma vector=USART0RX_VECTOR
 __interrupt void usartRxIsr()
 {
-	if(U0RCTL & RXERR || cbufIsFull(&rxBuff))
+	if((U0RCTL & RXERR) || (cbufIsFull(&rxBuff)))
 		guiFatalError("RX ERR!");
 	else
 	{
 		cbufPush(&rxBuff, U0RXBUF);
-		wakeUp();
+		if(isRxWaiting)
+		{
+			isRxWaiting = 0;
+			wakeUp();
+		}
 	}
 }
 
@@ -129,6 +126,7 @@ void initUsart()
 
 	U0CTL &= ~SWRST;
 
+	IFG1 &= ~(UTXIFG0 | URXIFG0);
 	IE1 |= (UTXIE0 | URXIE0);
 }
 
