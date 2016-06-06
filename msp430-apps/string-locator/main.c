@@ -5,26 +5,18 @@
 #include "virtualTerminal.h"
 #include "vtGui.h"
 
-const F_PTR modeKeysFunctions[MODE_KEYS_N] =
-{
-		enterInsertMode,
-		enterMovingMode ,
-		guiDisplayAll,
+char textStr[DISPLAY_WIDTH+1] = { '<', 's', 'a', 'm', 'p', 'l', 'e', '>', '\0' };
+int8_t textLen = 8;
+uint8_t textX = (DISPLAY_X + (DISPLAY_WIDTH/2) - (8/2)); // 2+10-8=4
+uint8_t textY = (DISPLAY_Y + (DISPLAY_HEIGHT/2) - (1/2)); // 15
+char textVtPos[10] = "\x1b[4;15";
+
+const ModeKey modeKeys[] = {
+		 '1', enterInsertMode ,
+		 '2', enterMovingMode ,
+		 VT_KEY_CTRL_R, guiDisplayAll
 };
-
-const uint8_t modeKeys[MODE_KEYS_N] =
-{
-		'1', // INSERT MODE
-		'2', // MOVING MODE
-		VT_ESC_KEY // DISPLAY ALL
-};
-
-const char wrongKeyErr[] = "WRONG KEY";
-
-char currText[DISPLAY_WIDTH+1] = { '<', 's', 'a', 'm', 'p', 'l', 'e', '>', '\0' };
-uint8_t currTextLen = DEFAULT_TEXT_LEN;
-uint8_t currTextX = DEFAULT_TEXT_X, currTextY = DEFAULT_TEXT_Y;
-char currTextVtPos[10] = DEFAULT_TEXT_VT_POS;
+const uint8_t MODE_KEYS_N = (sizeof(modeKeys) / sizeof(ModeKey));
 
 inline void initClock()
 {
@@ -45,36 +37,40 @@ static inline void initProgram()
 {
 	WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
 	initClock();
+	initUsart();
 }
 
 int main(void) {
 	initProgram();
 	guiDisplayAll();
-
+	usartRxEint();
 	uint8_t rxData;
 	int8_t i;
+
+	_EINT();
     while(1)
     {
-    	_DINT();
+    	usartRxDint();
     	if(!usartIsCharAvailable())
     	{
-    		_EINT();
-    		goSleep();
+    		usartRxEint();
+    		goSleepEint();
     	}
     	else
     	{
-    		_EINT();
     		rxData = usartGetChar();
+    		usartRxEint();
+
     		for(i = MODE_KEYS_N ; i > 0 ; i--)
-    			if(rxData == modeKeys[(uint8_t)i])
+    			if(rxData == modeKeys[(uint8_t)i].key)
     				break;
     		if(i == -1)
-    			guiSetError(wrongKeyErr);
+    			guiSetError("WRONG KEY");
     		else
     		{
     			if(guiWasError()) // jeśli poprzednio źle wklepano
     				guiClearError(); // skasuj czerwony napis na dole
-    			modeKeysFunctions[(uint8_t)i]();
+    			modeKeys[(uint8_t)i].keyFunction();
     		}
     	}
     }

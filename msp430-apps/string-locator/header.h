@@ -14,10 +14,23 @@
 
 #include "virtualTerminal.h"
 
-typedef void (*F_PTR)(void);
-#define MODE_KEYS_N 3
+typedef void (* const F_PTR)(void);
+typedef struct
+{
+	const uint8_t key;
+	F_PTR keyFunction;
+} ModeKey ;
 
-#define goSleep() (P1OUT = 0xFF)
-#define wakeUp() ()
+#define goSleepEint() (_BIS_SR(LPM0_bits | GIE))
+#define wakeUp() (_BIC_SR_IRQ(LPM0_bits))
+
+#define DISPLAY_WIDTH 21
+#define DISPLAY_HEIGHT 5
+
+extern uint8_t textX;
+extern uint8_t textY;
+extern char textStr[DISPLAY_WIDTH+1];
+extern int8_t textLen;
+extern char textVtPos[10];
 
 #endif /* HEADER_H_ */

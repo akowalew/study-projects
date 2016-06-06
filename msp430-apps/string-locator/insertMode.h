@@ -9,9 +9,8 @@
 #define INSERTMODE_H_
 
 #include "header.h"
+#include "vtGui.h"
 
 void enterInsertMode();
-
-
 
 #endif /* INSERTMODE_H_ */
