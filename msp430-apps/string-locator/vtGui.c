@@ -77,44 +77,14 @@ void guiDisplayAll()
 	usartSendStr(textStr);
 }
 
-volatile uint8_t buzzerFatality = 0;
-#pragma vector=TIMERA1_VECTOR
-__interrupt void timerA1_int()
-{
-	switch(TAIV)
-	{
-	case 0x0A:
-		if((--buzzerFatality) == 0)
-		{
-			BUZZER_OUT &= ~BUZZER;
-			TACTL &= ~MC0;
-		}
-		break;
-	}
-}
-
 inline void guiInit()
 {
 	BUZZER_OUT &= ~BUZZER;
 	BUZZER_DIR |= BUZZER;
-
-	TACTL = (TASSEL1 | ID1 | ID0 | TAIE);
-	TACCR0 = BUZZER_DELAY;
 }
 
-void guiSetError(uint8_t errorType)
+void guiSendError()
 {
-	/* usartSendChr('\x07');
-	return; */
-	TACTL &= ~TAIE;
-
-	if(buzzerFatality < errorType)
-	{
-		buzzerFatality = errorType;
-		BUZZER_OUT |= BUZZER;
-		TACTL |= MC0;
-	}
-
-	TACTL |= TAIE;
+	usartSendChr('\x07');
 }
 

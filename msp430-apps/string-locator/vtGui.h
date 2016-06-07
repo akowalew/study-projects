@@ -24,10 +24,7 @@ void guiDisplayAll();
 
 #define BUZZER_DELAY	9216
 
-#define NORMAL_ERROR 1
-#define FATAL_ERROR 50
-
-void guiSetError(uint8_t errorType) ;
+void guiSendError() ;
 void guiInit();
 
 #endif /* VTGUI_H_ */

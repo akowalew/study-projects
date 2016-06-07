@@ -45,7 +45,7 @@ void movingUp()
 {
 	if(textY == (DISPLAY_Y))
 	{
-		guiSetError(NORMAL_ERROR);
+		guiSendError();
 		return;
 	}
 
@@ -69,7 +69,7 @@ void movingDown()
 {
 	if(textY == (DISPLAY_Y + DISPLAY_HEIGHT - 1))
 	{
-		guiSetError(NORMAL_ERROR);
+		guiSendError();
 		return;
 	}
 
@@ -94,7 +94,7 @@ void movingLeft()
 {
 	if(textX == DISPLAY_X)
 	{
-		guiSetError(NORMAL_ERROR);
+		guiSendError();
 		return;
 	}
 
@@ -114,7 +114,7 @@ void movingRight()
 {
 	if((textX + textLen) == (DISPLAY_X + DISPLAY_WIDTH))
 	{
-		guiSetError(NORMAL_ERROR);
+		guiSendError();
 		return;
 	}
 	const char * const moveSequence = (
@@ -131,7 +131,7 @@ void movingRight()
 void enterMovingMode()
 {
 	if(textLen == 0)
-		guiSetError(NORMAL_ERROR);
+		guiSendError();
 	else
 	{
 		makeTextBold();
@@ -155,7 +155,7 @@ void enterMovingMode()
 							&& isKeyCorrect(rxData))
 						arrowKeys[rxData-ARROW_UP_KEY].keyFunction(); // command is okay, we have an arrow
 					else // wrong key
-						guiSetError(NORMAL_ERROR); // and... discard all other chars?
+						guiSendError(); // and... discard all other chars?
 
 					cmdI = 0;
 				}

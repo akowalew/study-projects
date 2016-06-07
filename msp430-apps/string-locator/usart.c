@@ -89,7 +89,7 @@ __interrupt void usartRxIsr()
 {
 	uint8_t tmp = U0RXBUF;
 	if((U0RCTL & RXERR) || (cbIsFull(&rxBuff)))
-		guiSetError(FATAL_ERROR);
+		guiSendError();
 	else
 	{
 		cbPush(&rxBuff, U0RXBUF);

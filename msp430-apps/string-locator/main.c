@@ -55,7 +55,7 @@ int main(void)
 			if(rxData == modeKeys[(uint8_t)i].key)
 				break;
 		if(i == -1)
-			guiSetError(NORMAL_ERROR);
+			guiSendError();
 		else
 			modeKeys[(uint8_t)i].keyFunction(); // execute its function
     }
