@@ -37,7 +37,6 @@ static inline void initProgram()
 	WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
 	initClock();
 	initUsart();
-	guiInit();
 }
 
 int main(void)
@@ -55,7 +54,7 @@ int main(void)
 			if(rxData == modeKeys[(uint8_t)i].key)
 				break;
 		if(i == -1)
-			guiSendError();
+			usartSendError();
 		else
 			modeKeys[(uint8_t)i].keyFunction(); // execute its function
     }

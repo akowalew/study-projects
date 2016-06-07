@@ -50,7 +50,6 @@ void usartSendStr(const char * data)
 {
 	// BLOCKING
 	// wait for available buffer space
-	// insert str
 	char c;
 	usartTxDint();
 	if(cbIsEmpty(&txBuff))
@@ -71,11 +70,20 @@ void usartSendStr(const char * data)
 	usartTxEint();
 }
 
+volatile uint8_t errorsToSend = 0;
 #pragma vector=USART0TX_VECTOR
 __interrupt void usartTxIsr()
 {
 	if(cbIsEmpty(&txBuff))
+	{
+		if(errorsToSend > 0)
+		{
+			U0TXBUF = '\a';
+			--errorsToSend;
+		}
 		return;
+	}
+
 	U0TXBUF = cbPop(&txBuff);
 	if(!cbIsModified(&txBuff))
 	{
@@ -87,9 +95,13 @@ __interrupt void usartTxIsr()
 #pragma vector=USART0RX_VECTOR
 __interrupt void usartRxIsr()
 {
-	uint8_t tmp = U0RXBUF;
+	uint8_t tmp = U0RXBUF; // should it working ??? below
 	if((U0RCTL & RXERR) || (cbIsFull(&rxBuff)))
-		guiSendError();
+	{
+		if(cbIsEmpty(&txBuff))
+			IFG1 |= UTXIFG0;
+		errorsToSend = 3;
+	}
 	else
 	{
 		cbPush(&rxBuff, U0RXBUF);

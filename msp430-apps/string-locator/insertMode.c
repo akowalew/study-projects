@@ -22,7 +22,7 @@ void enterInsertMode()
 		if((rxData >= 0x20) && (rxData <= 0x7E)) // All printable chars (with space)
 		{
 			if( (textX + textLen) == (DISPLAY_WIDTH + DISPLAY_X) ) // dalej nie mozemy
-				guiSendError();
+				usartSendError();
 			else
 			{
 				textStr[textLen++] = rxData;
@@ -37,7 +37,7 @@ void enterInsertMode()
 				usartSendStr(VT_CLR_CHR); // update string on screen (backspace, space, backspace)
 			}
 			else
-				guiSendError();
+				usartSendError();
 		}
 		else if(rxData == VT_KEY_ENTER)
 		{
@@ -46,6 +46,6 @@ void enterInsertMode()
 			return;
 		}
 		else
-			guiSendError();
+			usartSendError();
 	}
 }

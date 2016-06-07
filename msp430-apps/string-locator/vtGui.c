@@ -77,13 +77,8 @@ void guiDisplayAll()
 	usartSendStr(textStr);
 }
 
-inline void guiInit()
-{
-	BUZZER_OUT &= ~BUZZER;
-	BUZZER_DIR |= BUZZER;
-}
 
-void guiSendError()
+inline void usartSendError()
 {
 	usartSendChr('\x07');
 }

@@ -18,13 +18,7 @@
 
 void guiDisplayAll();
 
-#define BUZZER 0x01
-#define BUZZER_OUT P1OUT
-#define BUZZER_DIR P1DIR
-
-#define BUZZER_DELAY	9216
-
-void guiSendError() ;
+void usartSendError() ;
 void guiInit();
 
 #endif /* VTGUI_H_ */
