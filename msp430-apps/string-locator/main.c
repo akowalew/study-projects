@@ -17,7 +17,6 @@ const ModeKey modeKeys[] = {
 };
 const uint8_t MODE_KEYS_N = (sizeof(modeKeys) / sizeof(ModeKey));
 
-
 inline void initClock()
 {
 	// XT2 ON, LFXT1 LOW FREQ, ACLK DIV = 0, RSEL = 0

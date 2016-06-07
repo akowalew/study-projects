@@ -12,6 +12,8 @@
 
 #define CB_EMPTY 0x01
 #define CB_FULL 0x02
+#define CB_MODIFIED 0x04
+
 typedef struct
 {
 	volatile uint8_t head;
@@ -21,7 +23,7 @@ typedef struct
 	uint8_t SZ;
 } CBuffer ;
 
-static inline void cbufInit(volatile CBuffer *cbuf, volatile uint8_t *buff, uint8_t SZ)
+static inline void cbInit(volatile CBuffer *cbuf, volatile uint8_t *buff, uint8_t SZ)
 {
 	cbuf->flags = CB_EMPTY;
 	cbuf->head = cbuf->tail = 0;
@@ -29,7 +31,7 @@ static inline void cbufInit(volatile CBuffer *cbuf, volatile uint8_t *buff, uint
 	cbuf->SZ = SZ-1;
 }
 
-static inline void cbufPush(volatile CBuffer *cbuf, uint8_t data)
+static inline void cbPush(volatile CBuffer *cbuf, uint8_t data)
 {
     cbuf->buffer[cbuf->head] = data;
     cbuf->head = (cbuf->head + 1) & (cbuf->SZ);
@@ -40,7 +42,7 @@ static inline void cbufPush(volatile CBuffer *cbuf, uint8_t data)
 }
 
 
-static inline uint8_t cbufPop(volatile CBuffer *cbuf)
+static inline uint8_t cbPop(volatile CBuffer *cbuf)
 {
     uint8_t x = cbuf->buffer[cbuf->tail];
     cbuf->tail = (cbuf->tail + 1) & (cbuf->SZ);
@@ -52,13 +54,10 @@ static inline uint8_t cbufPop(volatile CBuffer *cbuf)
     return x;
 }
 
-static inline uint8_t cbufIsFull(volatile CBuffer *cbuf) { return (cbuf->flags & CB_FULL) ; }
-static inline uint8_t cbufIsEmpty(volatile CBuffer *cbuf) { return cbuf->flags & CB_EMPTY ; }
-
-/*void cbufInit(volatile CBuffer *cbuf, volatile uint8_t *buff, uint8_t SZ);
-void cbufPush(volatile CBuffer *cbuf, uint8_t c);
-uint8_t cbufPop(volatile CBuffer *cbuf);
-uint8_t cbufIsEmpty(volatile CBuffer *cbuf);
-uint8_t cbufIsFull(volatile CBuffer *cbuf);*/
+static inline uint8_t cbIsFull(volatile CBuffer *cbuf) { return (cbuf->flags & CB_FULL) ; }
+static inline uint8_t cbIsEmpty(volatile CBuffer *cbuf) { return (cbuf->flags & CB_EMPTY) ; }
+static inline uint8_t cbIsModified(volatile CBuffer *cbuf) { return (cbuf->flags & CB_MODIFIED) ; }
+static inline void cbNotModified(volatile CBuffer *cbuf) { cbuf->flags &= ~CB_MODIFIED; }
+static inline void cbModified(volatile CBuffer *cbuf) { cbuf->flags |= CB_MODIFIED; }
 
 #endif /* CBUFFER_H_ */

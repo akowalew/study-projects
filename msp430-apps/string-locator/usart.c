@@ -10,22 +10,20 @@ volatile uint8_t rxArray[USART_RX_BUFF_SZ];
 volatile uint8_t txArray[USART_TX_BUFF_SZ];
 volatile CBuffer rxBuff;
 volatile CBuffer txBuff;
-volatile uint8_t isTxWaiting = 0;
-volatile uint8_t isRxWaiting = 0;
 
 uint8_t usartGetChar_b()
 {
 	uint8_t ret ;
 	usartRxDint();
-	if(cbufIsEmpty(&rxBuff))
+	if(cbIsEmpty(&rxBuff))
 	{
-		isRxWaiting = 1;
+		cbNotModified(&rxBuff);
 		usartRxEint();
-		while(isRxWaiting)
+		while(cbIsModified(&rxBuff))
 			goSleep();
 		usartRxDint();
 	}
-	ret = cbufPop(&rxBuff);
+	ret = cbPop(&rxBuff);
 	usartRxEint();
 	return ret;
 }
@@ -33,18 +31,18 @@ uint8_t usartGetChar_b()
 void usartSendChr(const char data)
 {
 	usartTxDint();
-	if(cbufIsEmpty(&txBuff))
+	if(cbIsEmpty(&txBuff))
 		IFG1 |= UTXIFG0; // force TX ISR on
-	if(cbufIsFull(&txBuff))
+	if(cbIsFull(&txBuff))
 	{
-		isTxWaiting = 1;
+		cbNotModified(&txBuff);
 		usartTxEint();
-		while(isTxWaiting) {
+		while(cbIsModified(&txBuff)) {
 			goSleep(); // wait for at least 1 char
 		}
 		usartTxDint();
 	}
-	cbufPush(&txBuff, data);
+	cbPush(&txBuff, data);
 	usartTxEint();
 }
 
@@ -55,20 +53,20 @@ void usartSendStr(const char * data)
 	// insert str
 	char c;
 	usartTxDint();
-	if(cbufIsEmpty(&txBuff))
+	if(cbIsEmpty(&txBuff))
 		IFG1 |= UTXIFG0; // force TX ISR on
 	while((c = *(data++)))
 	{
-		if(cbufIsFull(&txBuff))
+		if(cbIsFull(&txBuff))
 		{
-			isTxWaiting = 1;
+			cbNotModified(&txBuff);
 			usartTxEint();
-			while(isTxWaiting) {
+			while(cbIsModified(&txBuff)) {
 				goSleep();
 			}
 			usartTxDint();
 		}
-		cbufPush(&txBuff, c);
+		cbPush(&txBuff, c);
 	}
 	usartTxEint();
 }
@@ -76,12 +74,12 @@ void usartSendStr(const char * data)
 #pragma vector=USART0TX_VECTOR
 __interrupt void usartTxIsr()
 {
-	if(cbufIsEmpty(&txBuff))
+	if(cbIsEmpty(&txBuff))
 		return;
-	U0TXBUF = cbufPop(&txBuff);
-	if(isTxWaiting)
+	U0TXBUF = cbPop(&txBuff);
+	if(!cbIsModified(&txBuff))
 	{
-		isTxWaiting = 0;
+		cbModified(&txBuff);
 		wakeUp();
 	}
 }
@@ -89,17 +87,15 @@ __interrupt void usartTxIsr()
 #pragma vector=USART0RX_VECTOR
 __interrupt void usartRxIsr()
 {
-	if((U0RCTL & RXERR) || (cbufIsFull(&rxBuff)))
-	{
+	uint8_t tmp = U0RXBUF;
+	if((U0RCTL & RXERR) || (cbIsFull(&rxBuff)))
 		guiSetError(FATAL_ERROR);
-		uint8_t tmp = U0RXBUF;
-	}
 	else
 	{
-		cbufPush(&rxBuff, U0RXBUF);
-		if(isRxWaiting)
+		cbPush(&rxBuff, U0RXBUF);
+		if(!cbIsModified(&rxBuff))
 		{
-			isRxWaiting = 0;
+			cbModified(&rxBuff);
 			wakeUp();
 		}
 	}
@@ -107,8 +103,8 @@ __interrupt void usartRxIsr()
 
 void initUsart()
 {
-	cbufInit(&rxBuff, rxArray, USART_RX_BUFF_SZ);
-	cbufInit(&txBuff, txArray, USART_TX_BUFF_SZ);
+	cbInit(&rxBuff, rxArray, USART_RX_BUFF_SZ);
+	cbInit(&txBuff, txArray, USART_TX_BUFF_SZ);
 
 	U0CTL |= SWRST;
 
