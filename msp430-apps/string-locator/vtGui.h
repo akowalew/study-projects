@@ -22,8 +22,12 @@ void guiDisplayAll();
 #define BUZZER_OUT P1OUT
 #define BUZZER_DIR P1DIR
 
-void guiSetError() ;
-void guiFatalError();
+#define BUZZER_DELAY	9216
+
+#define NORMAL_ERROR 1
+#define FATAL_ERROR 50
+
+void guiSetError(uint8_t errorType) ;
 void guiInit();
 
 #endif /* VTGUI_H_ */

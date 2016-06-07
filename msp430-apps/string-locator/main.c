@@ -5,11 +5,10 @@
 #include "virtualTerminal.h"
 #include "vtGui.h"
 
-char textStr[DISPLAY_WIDTH+1] = { "<sample>" };
-int8_t textLen = 8;
-uint8_t textX = DISPLAY_X;
-uint8_t textY = DISPLAY_Y;
-const char textDefaultVtPos[10] = "\x1b[13;2H";
+char textStr[DISPLAY_WIDTH+1];
+int8_t textLen;
+uint8_t textX;
+uint8_t textY;
 
 const ModeKey modeKeys[] = {
 		 '1', enterInsertMode ,
@@ -57,7 +56,7 @@ int main(void)
 			if(rxData == modeKeys[(uint8_t)i].key)
 				break;
 		if(i == -1)
-			guiSetError();
+			guiSetError(NORMAL_ERROR);
 		else
 			modeKeys[(uint8_t)i].keyFunction(); // execute its function
     }

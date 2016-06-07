@@ -4,34 +4,27 @@
  *  Created on: 5 cze 2016
  *      Author: dicker
  */
-
 #ifndef VT100_
 #define VT100_
 
 #include "header.h"
 #include "usart.h"
 
-void vtSetCursor(uint8_t x, uint8_t y);
+#define VT_CLR_SCR "\x1b[2J"
+#define VT_CLR_CHR "\b \b"
 
-#define VT_CLR_LN  "\x1b[2K"
-#define VT_CLR_SCR  "\x1b[2J"
-#define VT_CLR_CHR  "\b \b"
-
-#define VT_HOME 	"\x1b[H"
-#define VT_CURSOR_OFF  "\x1b[?25l"
-#define VT_CURSOR_ON  "\x1b[?25h"
+#define VT_HOME "\x1b[H"
+#define VT_CURSOR_OFF "\x1b[?25l"
+#define VT_CURSOR_ON "\x1b[?25h"
 #define VT_CURSOR_SAVE "\x1b[s"
-#define VT_CURSOR_RESTORE  "\x1b[u"
+#define VT_CURSOR_RESTORE "\x1b[u"
 #define VT_CURSOR_UP 	"\x1b[1A"
 #define VT_CURSOR_DOWN 	"\x1b[1B"
-#define VT_CURSOR_RIGHT 	"\x1b[1C"
+#define VT_CURSOR_RIGHT "\x1b[1C"
 #define VT_CURSOR_LEFT 	"\x1b[1D"
 
-#define VT_SET_BOLD 	"\x1b[1m"
 #define VT_RESET_ATTRS  "\x1b[0m"
 #define VT_SET_GREEN  "\x1b[32m"
-#define VT_SET_RED_FG  "\x1b[31m"
-#define VT_SET_CYAN_FG  "\x1b[36m"
 
 #define VT_KEY_ESC 0x1B
 #define VT_KEY_CTRL_R 0x12

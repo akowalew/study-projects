@@ -13,12 +13,7 @@ volatile CBuffer txBuff;
 volatile uint8_t isTxWaiting = 0;
 volatile uint8_t isRxWaiting = 0;
 
-uint8_t usartIsCharAvailable()
-{
-	return (!cbufIsEmpty(&rxBuff));
-}
-
-inline uint8_t usartGetChar_b()
+uint8_t usartGetChar_b()
 {
 	uint8_t ret ;
 	usartRxDint();
@@ -53,7 +48,7 @@ void usartSendChr(const char data)
 	usartTxEint();
 }
 
-inline void usartSendStr(const char * data)
+void usartSendStr(const char * data)
 {
 	// BLOCKING
 	// wait for available buffer space
@@ -73,7 +68,6 @@ inline void usartSendStr(const char * data)
 			}
 			usartTxDint();
 		}
-
 		cbufPush(&txBuff, c);
 	}
 	usartTxEint();
@@ -96,7 +90,10 @@ __interrupt void usartTxIsr()
 __interrupt void usartRxIsr()
 {
 	if((U0RCTL & RXERR) || (cbufIsFull(&rxBuff)))
-		guiFatalError("RX ERR!");
+	{
+		guiSetError(FATAL_ERROR);
+		uint8_t tmp = U0RXBUF;
+	}
 	else
 	{
 		cbufPush(&rxBuff, U0RXBUF);
@@ -129,8 +126,3 @@ void initUsart()
 	IFG1 &= ~(UTXIFG0 | URXIFG0);
 	IE1 |= (UTXIE0 | URXIE0);
 }
-
-inline void usartRxEint() { IE1 |= URXIE0; }
-inline void usartRxDint() { IE1 &= ~URXIE0 ; }
-inline void usartTxDint() { IE1 &= ~UTXIE0 ; }
-inline void usartTxEint() { IE1 |= UTXIE0 ; }

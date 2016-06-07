@@ -6,9 +6,6 @@
  */
 #include "vtGui.h"
 
-const char * const WRONG_KEY_ERR = "WRONG KEY";
-static uint8_t errorFlag = 0;
-
 inline void guiDrawDisplayBox()
 {
 	int8_t x;
@@ -28,22 +25,21 @@ inline void guiDrawDisplayBox()
 	usartSendStr(VT_CURSOR_RESTORE);
 	usartSendStr(VT_CURSOR_DOWN);
 
-	// left line
-	for(x = DISPLAY_HEIGHT ; x > 0; --x)
-	{
-		usartSendChr('|');
-		usartSendStr(VT_CURSOR_DOWN);
-		usartSendStr(VT_CURSOR_LEFT);
-	}
+	const char * const horizontalSeq1 = (
+			"|"
+			VT_CURSOR_DOWN
+			VT_CURSOR_LEFT );
+	for(x = DISPLAY_HEIGHT ; x > 0; --x) // left line
+		usartSendStr(horizontalSeq1);
 
 	usartSendStr(line); // downline
 
-	for(x = DISPLAY_HEIGHT ; x > 0; --x)
-	{
-		usartSendStr(VT_CURSOR_LEFT);
-		usartSendStr(VT_CURSOR_UP);
-		usartSendChr('|');
-	}
+	const char * const horizontalSeq2 = (
+			VT_CURSOR_LEFT
+			VT_CURSOR_UP
+			"|" );
+	for(x = DISPLAY_HEIGHT ; x > 0; --x) // right line
+		usartSendStr(horizontalSeq2);
 }
 
 void guiDisplayAll()
@@ -60,17 +56,41 @@ void guiDisplayAll()
 			"(1) - INSERT - just type your text\r\n"
 			"(2) - MOVING - use arrows to move string\r\n"
 			"\n"
-			"In every mode: <ENTER> to confirm, <CTRL> + <R> to undo\r\n"
+			"In every mode: <ENTER> to confirm, <CTRL> + <R> to reset\r\n"
 			"\n"
 			"Your display:\r\n";
 
 	usartSendStr(beginString);
 	guiDrawDisplayBox();
 
+	// default text init
+	char *p = textStr; char *p2 = DEFAULT_TEXT;
+	while(*(p++) = *(p2++));
+	textLen = DEFAULT_TEXT_LEN;
+	textX = DISPLAY_X;
+	textY = DISPLAY_Y;
+
 	// place current text in the box
+	const char textDefaultVtPos[10] = "\x1b[13;2H";
 	usartSendStr(textDefaultVtPos);
 	usartSendStr(VT_CURSOR_SAVE);
 	usartSendStr(textStr);
+}
+
+volatile uint8_t buzzerFatality = 0;
+#pragma vector=TIMERA1_VECTOR
+__interrupt void timerA1_int()
+{
+	switch(TAIV)
+	{
+	case 0x0A:
+		if((--buzzerFatality) == 0)
+		{
+			BUZZER_OUT &= ~BUZZER;
+			TACTL &= ~MC0;
+		}
+		break;
+	}
 }
 
 inline void guiInit()
@@ -78,20 +98,23 @@ inline void guiInit()
 	BUZZER_OUT &= ~BUZZER;
 	BUZZER_DIR |= BUZZER;
 
-//	TACTL = (TASSEL1 | )
+	TACTL = (TASSEL1 | ID1 | ID0 | TAIE);
+	TACCR0 = BUZZER_DELAY;
 }
 
-void guiSetError()
+void guiSetError(uint8_t errorType)
 {
-	// MAYBE BUZZER?
+	/* usartSendChr('\x07');
+	return; */
+	TACTL &= ~TAIE;
 
+	if(buzzerFatality < errorType)
+	{
+		buzzerFatality = errorType;
+		BUZZER_OUT |= BUZZER;
+		TACTL |= MC0;
+	}
 
-	errorFlag = 1;
+	TACTL |= TAIE;
 }
 
-void guiFatalError()
-{
-
-	// GIMME BUZZ BUZZ BUZZ!!
-
-}

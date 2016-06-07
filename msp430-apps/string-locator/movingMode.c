@@ -25,8 +25,8 @@ inline uint8_t isKeyCorrect(uint8_t key)
 
 void makeTextBold()
 {
-	usartSendStr(VT_CURSOR_RESTORE); // go to text position
-	usartSendStr(VT_SET_GREEN);
+	const char * const seq = ( VT_CURSOR_RESTORE VT_SET_GREEN );
+	usartSendStr(seq);
 	usartSendStr(textStr);
 }
 
@@ -45,7 +45,7 @@ void movingUp()
 {
 	if(textY == (DISPLAY_Y))
 	{
-		guiSetError();
+		guiSetError(NORMAL_ERROR);
 		return;
 	}
 
@@ -69,7 +69,7 @@ void movingDown()
 {
 	if(textY == (DISPLAY_Y + DISPLAY_HEIGHT - 1))
 	{
-		guiSetError();
+		guiSetError(NORMAL_ERROR);
 		return;
 	}
 
@@ -94,7 +94,7 @@ void movingLeft()
 {
 	if(textX == DISPLAY_X)
 	{
-		guiSetError();
+		guiSetError(NORMAL_ERROR);
 		return;
 	}
 
@@ -114,15 +114,9 @@ void movingRight()
 {
 	if((textX + textLen) == (DISPLAY_X + DISPLAY_WIDTH))
 	{
-		guiSetError();
+		guiSetError(NORMAL_ERROR);
 		return;
 	}
-
-	usartSendStr(VT_CURSOR_RESTORE);
-	usartSendStr(VT_SET_GREEN);
-	usartSendChr(' ');
-	usartSendStr(VT_CURSOR_SAVE);
-
 	const char * const moveSequence = (
 			VT_CURSOR_RESTORE
 			VT_SET_GREEN
@@ -137,7 +131,7 @@ void movingRight()
 void enterMovingMode()
 {
 	if(textLen == 0)
-		guiSetError();
+		guiSetError(NORMAL_ERROR);
 	else
 	{
 		makeTextBold();
@@ -161,7 +155,7 @@ void enterMovingMode()
 							&& isKeyCorrect(rxData))
 						arrowKeys[rxData-ARROW_UP_KEY].keyFunction(); // command is okay, we have an arrow
 					else // wrong key
-						guiSetError(); // and... discard all other chars?
+						guiSetError(NORMAL_ERROR); // and... discard all other chars?
 
 					cmdI = 0;
 				}
