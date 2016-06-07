@@ -16,21 +16,14 @@
 #define DISPLAY_X (BOX_X+1) // 2
 #define DISPLAY_Y (BOX_Y+1) // 13
 
-#define GUI_INFO_X 1
-#define GUI_INFO_Y (BOX_Y+DISPLAY_HEIGHT+4)
-#define GUI_INFO_VT_POS "\x1b[23;1H"
-
-#define GUI_ERROR_X 1
-#define GUI_ERROR_Y (GUI_INFO_Y+1)
-#define GUI_ERROR_POS_S "\x1b[24;1H"
-
-extern const char * const WRONG_KEY_ERR;
-
 void guiDisplayAll();
 
-uint8_t guiWasError();
-void guiSetError(const char * const);
-void guiFatalError(const char * const);
-void guiClearError();
+#define BUZZER 0x01
+#define BUZZER_OUT P1OUT
+#define BUZZER_DIR P1DIR
+
+void guiSetError() ;
+void guiFatalError();
+void guiInit();
 
 #endif /* VTGUI_H_ */

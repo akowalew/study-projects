@@ -18,7 +18,7 @@ uint8_t usartIsCharAvailable()
 	return (!cbufIsEmpty(&rxBuff));
 }
 
-inline uint8_t usartGetCharBlock()
+inline uint8_t usartGetChar_b()
 {
 	uint8_t ret ;
 	usartRxDint();
@@ -53,7 +53,7 @@ void usartSendChr(const char data)
 	usartTxEint();
 }
 
-void usartSendStr(const char * data)
+inline void usartSendStr(const char * data)
 {
 	// BLOCKING
 	// wait for available buffer space

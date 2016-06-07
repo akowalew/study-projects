@@ -6,11 +6,6 @@
  */
 #include "insertMode.h"
 
-inline void strcpy(char *dest, const char *src)
-{
-	while(*(dest++) = *(src++));
-}
-
 void enterInsertMode()
 {
 	usartSendStr(VT_CURSOR_RESTORE); // FIRST, PLACE CURSOR AT THE END OF STRING
@@ -22,13 +17,12 @@ void enterInsertMode()
 	uint8_t rxData;
 	while(1)
 	{
-		rxData = usartGetCharBlock();
+		rxData = usartGetChar_b();
 
-		guiClearError();
 		if((rxData >= 0x20) && (rxData <= 0x7E)) // All printable chars (with space)
 		{
 			if( (textX + textLen) == (DISPLAY_WIDTH + DISPLAY_X) ) // dalej nie mozemy
-				guiSetError("OUT OF BOUNDS");
+				guiSetError();
 			else
 			{
 				textStr[textLen++] = rxData;
@@ -43,7 +37,7 @@ void enterInsertMode()
 				usartSendStr(VT_CLR_CHR); // update string on screen (backspace, space, backspace)
 			}
 			else
-				guiSetError("EMPTY STRING");
+				guiSetError();
 		}
 		else if(rxData == VT_KEY_ENTER)
 		{
@@ -52,6 +46,6 @@ void enterInsertMode()
 			return;
 		}
 		else
-			guiSetError(WRONG_KEY_ERR);
+			guiSetError();
 	}
 }

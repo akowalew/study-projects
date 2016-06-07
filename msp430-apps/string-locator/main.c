@@ -5,14 +5,10 @@
 #include "virtualTerminal.h"
 #include "vtGui.h"
 
-char textStr[DISPLAY_WIDTH+1] = { '<', 's', 'a', 'm', 'p', 'l', 'e', '>', '\0' };
+char textStr[DISPLAY_WIDTH+1] = { "<sample>" };
 int8_t textLen = 8;
-
-#define TEXT_DEFAULT_X DISPLAY_X
-#define TEXT_DEFAULT_Y DISPLAY_Y
-
-uint8_t textX = TEXT_DEFAULT_X;
-uint8_t textY = TEXT_DEFAULT_Y;
+uint8_t textX = DISPLAY_X;
+uint8_t textY = DISPLAY_Y;
 const char textDefaultVtPos[10] = "\x1b[13;2H";
 
 const ModeKey modeKeys[] = {
@@ -21,6 +17,7 @@ const ModeKey modeKeys[] = {
 		 VT_KEY_CTRL_R, guiDisplayAll
 };
 const uint8_t MODE_KEYS_N = (sizeof(modeKeys) / sizeof(ModeKey));
+
 
 inline void initClock()
 {
@@ -42,30 +39,26 @@ static inline void initProgram()
 	WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
 	initClock();
 	initUsart();
+	guiInit();
 }
 
-int main(void) {
-	P1DIR = 0xFF;
+int main(void)
+{
 	initProgram();
-	__enable_interrupt();
 
+	__enable_interrupt();
 	guiDisplayAll();
 
-	uint8_t rxData;
-	int8_t i;
+	int8_t i; uint8_t rxData;
     while(1)
     {
-    	rxData = usartGetCharBlock();
+    	rxData = usartGetChar_b();
 		for(i = MODE_KEYS_N-1 ; i >= 0 ; i--)
 			if(rxData == modeKeys[(uint8_t)i].key)
 				break;
 		if(i == -1)
-			guiSetError("WRONG KEY");
+			guiSetError();
 		else
-		{
-			if(guiWasError()) // jeśli poprzednio źle wklepano
-				guiClearError(); // skasuj czerwony napis na dole
-			modeKeys[(uint8_t)i].keyFunction();
-		}
+			modeKeys[(uint8_t)i].keyFunction(); // execute its function
     }
 }

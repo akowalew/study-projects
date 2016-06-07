@@ -44,15 +44,13 @@ inline void guiDrawDisplayBox()
 		usartSendStr(VT_CURSOR_UP);
 		usartSendChr('|');
 	}
-
 }
 
 void guiDisplayAll()
 {
-	usartSendStr(VT_RESET);
-	usartSendStr(VT_CLR_SCR);
-	usartSendStr(VT_HOME);
-	usartSendStr(VT_CURSOR_OFF);
+	const char * const resetSeq = ("\x1b\x63" "\x1b[2J" "\x1b[H" "\x1b[?25l");
+			// VT_RESET, VT_CLR_SCR, VT_HOME, VT_CURSOR_OFF
+	usartSendStr(resetSeq);
 
 	const char * const beginString =
 			"Hi, here you can configure\r\n"
@@ -70,53 +68,30 @@ void guiDisplayAll()
 	guiDrawDisplayBox();
 
 	// place current text in the box
-	usartSendStr(textDefaultVtPos); // vtSetCursor(currTextX, currTextY);
+	usartSendStr(textDefaultVtPos);
 	usartSendStr(VT_CURSOR_SAVE);
 	usartSendStr(textStr);
 }
 
-void guiSetStatusStr(const char * const statusStr)
+inline void guiInit()
 {
-	usartSendStr(GUI_INFO_VT_POS);
-	usartSendStr(statusStr);
+	BUZZER_OUT &= ~BUZZER;
+	BUZZER_DIR |= BUZZER;
+
+//	TACTL = (TASSEL1 | )
 }
 
-void guiSetError(const char * const errorMsg)
+void guiSetError()
 {
-	usartSendStr(GUI_ERROR_POS_S); // set position
-	usartSendStr(VT_CLR_LN); // clear line
-	usartSendStr(VT_SET_RED_FG); // red color
-	usartSendStr(errorMsg);
-	usartSendStr(VT_RESET_ATTRS);
-	errorFlag = 1;
-	P1OUT = 0XFF;
 	// MAYBE BUZZER?
-	usartSendStr(VT_CURSOR_RESTORE);
-}
 
-void guiFatalError(const char * const errorMsg)
-{
-	usartSendStr(GUI_ERROR_POS_S); // set position
-	usartSendStr(VT_CLR_LN); // clear line
-	usartSendStr(VT_SET_RED_FG); // red color
-	usartSendStr(errorMsg);
-	usartSendStr(VT_RESET_ATTRS);
+
 	errorFlag = 1;
-	P1OUT = 0xFF;
+}
+
+void guiFatalError()
+{
+
 	// GIMME BUZZ BUZZ BUZZ!!
-	usartSendStr(VT_CURSOR_RESTORE);
-}
 
-void guiClearError()
-{
-	usartSendStr(GUI_ERROR_POS_S); // set position
-	usartSendStr(VT_CLR_LN); // clear lilne
-	errorFlag = 0;
-	P1OUT = 0;
-	usartSendStr(VT_CURSOR_RESTORE);
-}
-
-uint8_t guiWasError()
-{
-	return errorFlag;
 }
