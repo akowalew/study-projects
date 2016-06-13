@@ -5,10 +5,16 @@
 #include "virtualTerminal.h"
 #include "vtGui.h"
 
+#pragma NOINIT(textStr)
 char textStr[DISPLAY_WIDTH+1];
 int8_t textLen;
 uint8_t textX;
 uint8_t textY;
+
+void __low_level_init(void)
+{
+	WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
+}
 
 const ModeKey modeKeys[] = {
 		 '1', enterInsertMode ,
@@ -34,7 +40,6 @@ inline void initClock()
 
 static inline void initProgram()
 {
-	WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
 	initClock();
 	initUsart();
 }
