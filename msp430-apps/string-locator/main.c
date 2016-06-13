@@ -13,7 +13,7 @@ uint8_t textY;
 
 void __low_level_init(void)
 {
-	WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
+
 }
 
 const ModeKey modeKeys[] = {
@@ -40,6 +40,7 @@ inline void initClock()
 
 static inline void initProgram()
 {
+	WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
 	initClock();
 	initUsart();
 }

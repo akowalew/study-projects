@@ -18,10 +18,14 @@ uint8_t usartGetChar_b()
 	if(cbIsEmpty(&rxBuff))
 	{
 		cbNotModified(&rxBuff);
-		usartRxEint();
-		while(cbIsModified(&rxBuff))
-			goSleep();
-		usartRxDint();
+		while(1) {
+			_DINT();
+			usartRxEint();
+			goSleep(); // wait for at least 1 char
+			usartRxDint();
+			if(cbIsModified(&rxBuff))
+				break;
+		}
 	}
 	ret = cbPop(&rxBuff);
 	usartRxEint();
@@ -36,11 +40,14 @@ void usartSendChr(const char data)
 	if(cbIsFull(&txBuff))
 	{
 		cbNotModified(&txBuff);
-		usartTxEint();
-		while(cbIsModified(&txBuff)) {
+		while(1) {
+			_DINT();
+			usartTxEint();
 			goSleep(); // wait for at least 1 char
+			usartTxDint();
+			if(cbIsModified(&txBuff))
+				break;
 		}
-		usartTxDint();
 	}
 	cbPush(&txBuff, data);
 	usartTxEint();
@@ -59,11 +66,14 @@ void usartSendStr(const char * data)
 		if(cbIsFull(&txBuff))
 		{
 			cbNotModified(&txBuff);
-			usartTxEint();
-			while(cbIsModified(&txBuff)) {
-				goSleep();
+			while(1) {
+				_DINT();
+				usartTxEint();
+				goSleep(); // wait for at least 1 char
+				usartTxDint();
+				if(cbIsModified(&txBuff))
+					break;
 			}
-			usartTxDint();
 		}
 		cbPush(&txBuff, c);
 	}
