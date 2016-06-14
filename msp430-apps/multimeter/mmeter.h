@@ -10,6 +10,8 @@
 
 #include "header.h"
 
+#define MMETER_MEMORY_ADDR 0x1080
+
 class Mmeter
 {
 public:
@@ -34,7 +36,9 @@ public:
 
 	static void addMeasure(uint16_t m0, uint16_t m1);
 	static void getStr(char dest[STR_LEN]);
-private :
+	static void loadFromMemory();
+
+public :
 	static const uint8_t counts[COUNTS_N];
 	static uint8_t measureMode;
 	static uint8_t readyFlag;
@@ -45,5 +49,6 @@ private :
 	static uint16_t readyV0, readyV1 ;
 
 	static void restoreMode();
+	static void saveToFlash();
 };
 #endif /* MMETER_H_ */

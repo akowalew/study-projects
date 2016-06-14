@@ -9,6 +9,33 @@ volatile uint16_t adcmem0 = 0, adcmem1 = 0;
 volatile uint8_t delayRemain = 0;
 volatile uint8_t debounceDelayRemain = 0;
 
+inline void displayGui()
+{
+	char bottomText[17] = " MIN MAX AVG    " ;
+	uint8_t i = Mmeter::getMode();
+	bottomText[i*4] = '[';
+	bottomText[(i*4)+4] = ']';
+
+	i = Mmeter::getCounts();
+	if(Mmeter::getCounts() == 16)
+	{
+		bottomText[14] = '1';
+		bottomText[15] = '6';
+	}
+	else
+	{
+		bottomText[15] = '0' + i;
+	}
+	bottomText[16] = '\0';
+
+	lcdSetPos(0, 1);
+	lcdSendStr(bottomText);
+
+	Mmeter::getStr(bottomText);
+	lcdSetPos(0,0);
+	lcdSendStr(bottomText);
+}
+
 inline void initTimer()
 {
 	TACTL |= (TASSEL0 | TACLR);
@@ -46,6 +73,14 @@ inline void adcInit()
 	ADC12IE = 0x03 ;
 }
 
+inline void buttonsInit()
+{
+	P1DIR = 0x00;
+	//P1OUT = 0x00;
+	P1IE = (BTN_0 | BTN_1);
+	P1IES = (BTN_0 | BTN_1);
+}
+
 #pragma vector=ADC12_VECTOR
 __interrupt void adc12_ISR()
 {
@@ -56,7 +91,6 @@ __interrupt void adc12_ISR()
 		break;
 	case 0x08 :
 		adcmem1 = ADC12MEM1;
-
 		programFlags |= FLAG_ADC_COMPLETE;
 		wakeUp();
 		break;
@@ -65,31 +99,31 @@ __interrupt void adc12_ISR()
 	}
 }
 
-inline void buttonsInit()
-{
-	P1DIR = 0x00;
-	P1OUT = 0x00;
-	P1IE = (BTN_0 | BTN_1);
-	P1IES = (BTN_0 | BTN_1);
-}
-
 #pragma vector=TIMERA0_VECTOR
 __interrupt void timerA0_ISR()
 {
-	uint8_t isWorking = 0x03;
+	uint8_t isWorking = 0;
 
 	TACCR0 += TIMERA0_DELAY;
-	if(delayRemain && (!--delayRemain))
+	if(delayRemain)
 	{
-		wakeUp();
-		isWorking &= ~0x01;
+		--delayRemain;
+		if(!delayRemain)
+			wakeUp();
+		else
+			isWorking |= 0x01;
 	}
 
-	if(debounceDelayRemain && (!(--debounceDelayRemain)))
+	if(debounceDelayRemain )
 	{
-		programFlags |= FLAG_DEBOUNCE;
-		wakeUp();
-		isWorking &= ~0x02;
+		--debounceDelayRemain;
+		if(!debounceDelayRemain)
+		{
+			programFlags |= FLAG_DEBOUNCE;
+			wakeUp();
+		}
+		else
+			isWorking |= 0x02;
 	}
 
 	if(!isWorking)
@@ -102,34 +136,25 @@ __interrupt void timerA0_ISR()
 #pragma vector=PORT1_VECTOR
 __interrupt void port1_ISR()
 {
-	TACTL |= MC1;
+	TACTL |= MC1;//
 	debounceDelayRemain = DEBOUNCE_CYCLES;
-	P1IE &= ~(BTN_1 | BTN_2 | BTN_0);
-	P1IFG &= ~(BTN_1 | BTN_2 | BTN_0);
+	P1IE &= ~(BTN_1 | BTN_0);
+	P1IFG &= ~(BTN_1 | BTN_0);
 }
 
 inline uint8_t scanButtons()
 {
-	uint8_t ret = 3;
-	uint8_t mask = BTN_2;
-	uint8_t i = 2;
-	do
-	{
-		if(!(P1IN & mask))
-		{
-			if(ret == 3)
-				ret = mask;
-			else {
-				ret = 0xFF;
-				break;
-			}
-		}
-		mask >>= 1; --i;
-	}while(mask);
-
 	P1IES = P1IN;
-	P1IE |= (BTN_1 | BTN_2 | BTN_0);
-	return ret ;
+	P1IFG = 0;
+	P1IE |= (BTN_1 | BTN_0);
+
+	if(!(P1IN & 0x01))
+		return (!(P1IN & 0x02)) ? 0xFF : 0;
+
+	if(!(P1IN & 0x02))
+		return (!(P1IN & 0x01)) ? 0xFF : 1;
+
+	return 0xFF;
 }
 
 void blockDelay(uint16_t delay)
@@ -153,13 +178,13 @@ inline void switchMode()
 	uint8_t i = Mmeter::getMode();
 	nibble[i] = '[' ; nibble[i+1] = ']';
 
-	i = 4 ; uint8_t x = 12 ;
+	i = 3 ; uint8_t x = 12 ;
 	do
 	{
 		lcdSetPos(x, 1);
 		lcdSendChr(nibble[i]);
 		x -= 4;
-	}while(--i);
+	}while(i--);
 }
 
 inline void switchSize()
@@ -176,57 +201,35 @@ inline void switchSize()
 	}
 }
 
-inline void switchRunning()
-{
-	// Mmeter::nextMode(); is it necessary?
-}
-
-inline void displayGui()
-{
-	char bottomText[17] = " MIN MAX AVG    " ;
-	uint8_t i = Mmeter::getMode();
-	bottomText[i*4] = '[';
-	bottomText[(i*4)+4] = ']';
-
-	i = Mmeter::getCounts();
-	if(Mmeter::getCounts() == 16)
-	{
-		bottomText[15] = '1';
-		bottomText[16] = '6';
-	}
-	else
-	{
-		bottomText[16] = '0' + i;
-	}
-
-	lcdSetPos(0, 1);
-	lcdSendStr(bottomText);
-
-	Mmeter::getStr(bottomText);
-	lcdSetPos(0,0);
-	lcdSendStr(bottomText);
-}
 
 int main(void) {
-    WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
+	// Stop watchdog timer, Clear it, Source : ACLK, 1s wait
+    WDTCTL = WDTPW | WDTHOLD | WDTCNTCL | WDTSSEL ;
+    if(IFG1 & WDTIFG)
+    {
+    	P5OUT = 0x0F ;
+    	P4OUT = 0xAF;
+    	IFG1 &= ~WDTIFG;
+    }
+
     initClock();
+    initTimer();
     lcdInit();
     adcInit();
     buttonsInit();
-    initTimer();
-
+    Mmeter::loadFromMemory();
     displayGui();
 
     char measurments[Mmeter::STR_LEN];
-    ADC12CTL1 |= ADC12SC | ENC ; // start conversion
+    ADC12CTL0 |= ADC12SC | ENC ; // start conversion
 	while(1)
 	{
 		goSleep(); // After wake up, GIE is cleared
-
+		_DINT();
 		do {
 			if(programFlags & FLAG_ADC_COMPLETE)
 			{
-				programFlags &= FLAG_ADC_COMPLETE;
+				programFlags &= ~FLAG_ADC_COMPLETE;
 				_EINT();
 
 				Mmeter::addMeasure(adcmem0, adcmem1);
@@ -236,7 +239,7 @@ int main(void) {
 				lcdSetPos(0, 0);
 				lcdSendStr(measurments);
 
-				ADC12CTL1 |= ADC12SC | ENC ; // start conversion
+				ADC12CTL0 |= ADC12SC | ENC ; // start conversion
 				_DINT();
 			}
 
@@ -251,11 +254,15 @@ int main(void) {
 				{
 					switchMode,
 					switchSize,
-					switchRunning
 				};
 
 				if(!(buttons == 0xFF)) // No buttons or multiple
+				{
 					functionArray[buttons]();
+					WDTCTL = WDTPW | WDTCNTCL | WDTSSEL ;
+				}
+				else
+					WDTCTL = WDTPW | WDTHOLD;
 
 				_DINT();
 			}

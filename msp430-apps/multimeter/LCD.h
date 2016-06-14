@@ -25,4 +25,5 @@ void lcdSendStr(const char* s);
 void lcdSendCmd(char command);
 void lcdSetPos(uint8_t x, uint8_t y);
 
+
 #endif /* BUTTONS_H_ */

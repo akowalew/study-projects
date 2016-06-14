@@ -33,7 +33,7 @@ void lcdSendChr(char c){
 	LCD_CTRL_OUT = LCD_PIN_RS | LCD_PIN_E;
 	LCD_DATA_OUT = c;
 	LCD_CTRL_OUT &= ~LCD_PIN_E;
-	blockDelay(20);
+	blockDelay(5);
 }
 
 void lcdSendStr(const char* s){
@@ -41,7 +41,7 @@ void lcdSendStr(const char* s){
 	while(*s){
 		LCD_DATA_OUT = *s;
 		LCD_CTRL_OUT |=LCD_PIN_E; LCD_CTRL_OUT &=~LCD_PIN_E;
-		blockDelay(20);
+		blockDelay(5);
 		s++;
 	}
 }
@@ -51,7 +51,7 @@ inline void lcdSendCmd(char command)
 	LCD_CTRL_OUT &= ~LCD_PIN_RS;
 	LCD_DATA_OUT = command;
 	LCD_CTRL_OUT |=LCD_PIN_E; LCD_CTRL_OUT &=~LCD_PIN_E;
-	blockDelay(20);
+	blockDelay(5);
 }
 
 void lcdSetPos(uint8_t x, uint8_t y)
