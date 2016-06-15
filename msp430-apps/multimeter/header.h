@@ -21,12 +21,10 @@
 
 #define BTN_0 0x01
 #define BTN_1 0x02
-#define BTN_N 2
 
-#define goSleep() (_BIS_SR(LPM0_bits | GIE))
-#define wakeUp() (_BIC_SR_IRQ(LPM0_bits | GIE))
-extern volatile uint8_t mainFlags;
+#define goSleep() _BIS_SR(LPM0_bits | GIE)
+#define wakeUp()  _BIC_SR_IRQ(LPM0_bits | GIE)
 
-void blockDelay(uint16_t delay);
+void waitDelay(uint16_t delay);
 
 #endif /* HEADER_H_ */
