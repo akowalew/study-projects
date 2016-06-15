@@ -29,6 +29,12 @@ struct
 	uint16_t readyV0, readyV1 ;
 } mmeter;
 
+
+#pragma DATA_SECTION( defaultMeasMode, ".infoB" );
+int defaultMeasMode = 0;
+
+#pragma DATA_SECTION( defaultCountsIndex, ".infoB" );
+int defaultCountsIndex = 0;
 void multimeterSaveToFlash()
 {
 	// save to flash
@@ -38,13 +44,13 @@ void multimeterSaveToFlash()
 	FCTL2 = FWKEY | FSSEL0 | 24 ;
 	FCTL3 = FWKEY;
 	FCTL1 = FWKEY | ERASE;
-	*((uint8_t*)(0x1080)) = 0x00;
+	defaultMeasMode = 0x00;
 
 	FCTL1 = FWKEY | WRT;
-	*((uint8_t*)(0x1080)) = mmeter.measureMode;
+	defaultMeasMode = mmeter.measureMode;
 
 	FCTL1 = FWKEY | WRT;
-	*((uint8_t*)(0x1081)) = mmeter.countsIndex;
+	defaultCountsIndex = mmeter.countsIndex;
 	FCTL3 = FWKEY | LOCK;
 	_EINT();
 	// reenable WDT
@@ -214,7 +220,7 @@ void multimeterAddMeasure(uint16_t m0, uint16_t m1)
 
 void multimeterNewMeasure()
 {
-	multimeterAddMeasure(adcmem0, adcmem1);
+	multimeterAddMeasure(adcArray[0], adcArray[1]);
 
 	if(mmeter.readyFlag)
 	{
@@ -228,25 +234,15 @@ void multimeterNewMeasure()
 	ADC12CTL0 |= ADC12SC | ENC ; // start conversion
 }
 
-#pragma DATA_SECTION( defaultMeasMode, ".infoB" );
-int defaultMeasMode;
 
-#pragma DATA_SECTION( defaultCountsIndex, ".infoB" );
-int defaultCountsIndex;
 
 void multimeterInit()
 {
 	P4OUT = defaultMeasMode;
 	P5OUT = defaultCountsIndex;
 
-	mmeter.measureMode = *((uint8_t*)(0x1080));
-	mmeter.countsIndex = *((uint8_t*)(0x1081));
-	if(mmeter.measureMode > MMETER_AVG || mmeter.countsIndex >= MMETER_COUNTS_N)
-	{ // first run
-		mmeter.measureMode = MMETER_MAX;
-		mmeter.countsIndex = 3;
-		multimeterSaveToFlash();
-	}
+	mmeter.measureMode = defaultMeasMode;
+	mmeter.countsIndex = defaultCountsIndex;
 
 	multimeterDisplayAll();
 }

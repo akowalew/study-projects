@@ -11,7 +11,7 @@
 void initAll();
 
 extern volatile uint8_t programFlags;
-extern volatile uint16_t adcmem0, adcmem1;
+extern volatile uint16_t adcArray[2];
 extern volatile uint8_t delayRemain;
 extern volatile uint8_t debounceDelayRemain;
 
